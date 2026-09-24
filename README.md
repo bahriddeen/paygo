@@ -45,9 +45,11 @@ On first launch you'll hit the activation screen — mint a code for yourself
 with `npm run mint -- 1` and paste it in.
 
 See **[SETUP.md](SETUP.md)** for the full setup guide (prerequisites, dev
-workflow, testing, seeding demo data, building the Windows installer) and
+workflow, testing, seeding demo data, building the Windows installer),
 **[INFO.md](INFO.md)** for architecture notes, data model, and operational
-details worth knowing before you touch licensing, the lock screen, or backups.
+details worth knowing before you touch licensing, the lock screen, or backups,
+and **[TESTING.md](TESTING.md)** for the manual QA checklist to run through
+before a release.
 
 ## Scripts
 
