@@ -1,7 +1,7 @@
-import { ipcMain, app, shell, dialog, Notification } from 'electron'
+import { ipcMain, app, shell, dialog, Notification, BrowserWindow } from 'electron'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { z } from 'zod'
-import { getDb, resetDb } from '../db/connection'
+import { getDb, initDb, resetDb } from '../db/connection'
 import {
   listBranches,
   createBranch,
@@ -382,16 +382,26 @@ export function registerIpc(): void {
   })
 
   // Factory reset: wipes the entire local database (all branches, clients,
-  // transactions, payments, settings, activation, PIN) and restarts the app
-  // so it comes back up as if freshly installed. Requires the current PIN.
+  // transactions, payments, settings, activation, PIN), reopens a fresh
+  // migrated DB, and reloads the window so the app comes back up as if
+  // freshly installed. Requires the current PIN.
+  //
+  // Deliberately reloads the existing window rather than app.relaunch() +
+  // app.exit(): relaunch spawns a new OS process, and on macOS that goes
+  // through Launch Services, which does not reliably pass through
+  // ELECTRON_RENDERER_URL (the dev server URL electron-vite sets) — the
+  // relaunched instance then fails to load anything in `npm run dev`
+  // (out/renderer/index.html doesn't exist outside a production build),
+  // showing a blank window. Reloading the current window's already-loaded
+  // URL has no such dependency and works identically in dev and prod.
   ipcMain.handle('account:reset', (_e, raw) => {
     const { pin } = ResetAccountSchema.parse(raw)
     if (!verifyPin(getDb(), pin)) return { ok: false, error: 'wrong_pin' }
     resetDb()
+    initDb()
     setTimeout(() => {
-      app.relaunch()
-      app.exit(0)
-    }, 100)
+      for (const win of BrowserWindow.getAllWindows()) win.webContents.reload()
+    }, 150)
     return { ok: true }
   })
 }

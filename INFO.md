@@ -115,13 +115,23 @@ internal ones set outside the Settings UI: `activation_code_id`,
   plan), not a bug.
 - **Factory reset ("Delete account")**: Settings → Danger Zone. Requires the
   current PIN, shows a full-data-loss warning, then permanently deletes the
-  SQLite file (and WAL/SHM siblings — `src/main/db/reset.ts`) and restarts
-  the app, which comes back up on the activation screen exactly as if
-  freshly installed (activation, PIN, all branches/clients/transactions —
-  everything is gone). There is **no undo** and **no export prompt on the
-  way out** — if the shop owner wants their data first, they need to export
-  JSON *before* using this. Only ever test this against a throwaway
-  profile, never a real one.
+  SQLite file (and WAL/SHM siblings — `src/main/db/reset.ts`), reopens a
+  fresh migrated DB, and **reloads the window in place** so the app comes
+  back up on the activation screen exactly as if freshly installed
+  (activation, PIN, all branches/clients/transactions — everything is
+  gone). There is **no undo** and **no export prompt on the way out** — if
+  the shop owner wants their data first, they need to export JSON *before*
+  using this. Only ever test this against a throwaway profile, never a
+  real one.
+  - Deliberately implemented as `resetDb() + initDb() + webContents.reload()`
+    rather than `app.relaunch() + app.exit()`. The relaunch approach spawns
+    a whole new OS process, and on macOS that goes through Launch Services,
+    which doesn't reliably pass through `ELECTRON_RENDERER_URL` (the dev
+    server URL `electron-vite dev` sets) — the relaunched instance then had
+    nothing to load in `npm run dev` (`out/renderer/index.html` doesn't
+    exist outside a production build) and showed a blank window. Reloading
+    the existing window's already-loaded URL has no such dependency and
+    behaves identically in dev and prod. Don't reintroduce relaunch here.
 
 ## Product decisions worth knowing (so they don't get "fixed")
 
