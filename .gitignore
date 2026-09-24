@@ -1,0 +1,12 @@
+node_modules
+out
+dist
+release
+*.local
+.DS_Store
+# Never commit the license signing PRIVATE key
+tools/license-gen/keys/
+*.private.pem
+
+# Minted activation codes are sellable licenses, not source
+codes.txt

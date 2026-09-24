@@ -1,0 +1,49 @@
+name: Build Windows installer
+
+# Build the x64 NSIS installer natively on Windows (no Wine, no cross-compile
+# surprises). Runs on a version tag, or on demand.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure a signing public key exists
+        shell: bash
+        run: |
+          # The committed publicKey.ts is required to build. If missing (never
+          # commit the PRIVATE key), fail loudly.
+          test -f src/main/license/publicKey.ts || {
+            echo "src/main/license/publicKey.ts missing — run 'npm run license:keygen' locally and commit it." >&2
+            exit 1
+          }
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build installer (x64)
+        run: npm run build:win
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: qarz-daftari-win-x64
+          path: release/*-setup.exe
+          if-no-files-found: error

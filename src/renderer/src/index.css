@@ -1,0 +1,119 @@
+@import './styles/fonts.css';
+@import 'tailwindcss';
+
+/* Class-based dark mode: `dark:` utilities apply under .dark */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---- Design tokens: ledger heritage, ink-dominant, color = status ---- */
+:root {
+  --background: #f6f7f5; /* cool paper (not cream) */
+  --foreground: #16211c; /* ledger ink — deep green-charcoal */
+  --card: #ffffff;
+  --card-foreground: #16211c;
+  --popover: #ffffff;
+  --popover-foreground: #16211c;
+
+  --primary: #0f7a54; /* pine — "in good standing" / brand, used sparingly */
+  --primary-foreground: #ffffff;
+  --secondary: #eaf0ec;
+  --secondary-foreground: #1b3327;
+  --muted: #eef1ee;
+  --muted-foreground: #5b6b62;
+  --accent: #eaf0ec; /* hover surface */
+  --accent-foreground: #12241b;
+
+  --destructive: #b4322a; /* overdue / danger */
+  --destructive-foreground: #ffffff;
+  --warn: #b07a16; /* due soon */
+  --warn-foreground: #ffffff;
+
+  --border: #e2e6e1; /* ledger rule */
+  --input: #e2e6e1;
+  --ring: #0f7a54;
+
+  --radius: 0.625rem;
+}
+
+.dark {
+  /* Near-neutral cool charcoal — green lives only in the accent, not the base */
+  --background: #0f1214;
+  --foreground: #e6eaec;
+  --card: #161a1d;
+  --card-foreground: #e6eaec;
+  --popover: #161a1d;
+  --popover-foreground: #e6eaec;
+
+  --primary: #33ac80; /* emerald, pops against neutral dark */
+  --primary-foreground: #05130d;
+  --secondary: #1e2529;
+  --secondary-foreground: #d5dce0;
+  --muted: #191e21;
+  --muted-foreground: #8a949b;
+  --accent: #1e2529;
+  --accent-foreground: #e6eaec;
+
+  --destructive: #e5675e;
+  --destructive-foreground: #1a0b09;
+  --warn: #e0a94a;
+  --warn-foreground: #14100a;
+
+  --border: #242a2e;
+  --input: #242a2e;
+  --ring: #33ac80;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-warn: var(--warn);
+  --color-warn-foreground: var(--warn-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  /* Form controls follow the active theme */
+  :root {
+    color-scheme: light;
+  }
+  .dark {
+    color-scheme: dark;
+  }
+}

@@ -1,0 +1,42 @@
+appId: com.qarzdaftari.app
+productName: Qarz Daftari
+copyright: Copyright © 2026
+
+directories:
+  output: release
+  buildResources: build
+
+# Exclusion-only so electron-builder keeps its default `**/*` (which auto-limits
+# node_modules to production deps — exceljs is required at runtime). NEVER ship
+# source, tests, tooling, or the license signing key.
+files:
+  - '!src/**'
+  - '!tools/**'
+  - '!.github/**'
+  - '!release/**'
+  - '!**/*.test.{ts,tsx}'
+  - '!**/*.map'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json,electron.vite.config.ts,electron-builder.yml,vitest.config.ts}'
+  - '!{.env,.env.*,.npmrc,.gitignore}'
+  - '!**/*.md'
+
+# No native modules (node:sqlite is built into Electron; exceljs is pure JS).
+npmRebuild: false
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.png
+  executableName: qarz-daftari
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Qarz Daftari
+  artifactName: ${productName}-${version}-x64-setup.${ext}
+  uninstallDisplayName: ${productName}
