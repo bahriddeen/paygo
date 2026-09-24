@@ -13,7 +13,7 @@
     "typecheck:web": "tsc -p tsconfig.web.json --noEmit",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "test": "vitest run",
-    "build:win": "electron-vite build && electron-builder --win --x64",
+    "build:win": "electron-vite build && electron-builder --win --x64 --publish never",
     "license:keygen": "node --no-warnings tools/license-gen/generate-keys.ts",
     "mint": "node --no-warnings tools/license-gen/mint.ts",
     "seed": "node --no-warnings tools/seed/seed.ts"
