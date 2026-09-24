@@ -1,6 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Trash2, Send } from 'lucide-react'
+import { Trash2, Send, AlertTriangle } from 'lucide-react'
 import { useBranch } from '@/app/BranchProvider'
 import {
   useLicenseStatus,
@@ -9,13 +9,16 @@ import {
   useRenameBranch,
   useDeleteBranch,
   useSettings,
-  useSetSetting
+  useSetSetting,
+  useResetAccount
 } from '@/lib/api'
 import { CURRENCY_CODES } from '@/lib/format'
 import { defaultWaTemplate } from '@/lib/i18n'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Modal } from '@/components/ui/modal'
+import { PinField } from '@/components/PinField'
 import { DataBackup } from './DataBackup'
 
 const selectClass =
@@ -155,6 +158,61 @@ function BranchManager() {
   )
 }
 
+function DeleteAccountSection() {
+  const { t } = useTranslation()
+  const reset = useResetAccount()
+  const [open, setOpen] = useState(false)
+  const [error, setError] = useState('')
+  const [resetting, setResetting] = useState(false)
+
+  function close(): void {
+    if (resetting) return // don't let them dismiss mid-reset
+    setOpen(false)
+    setError('')
+  }
+
+  function handlePin(pin: string): void {
+    setError('')
+    reset.mutate(pin, {
+      onSuccess: (r) => {
+        if (r.ok) setResetting(true) // app quits + relaunches itself momentarily
+        else setError(t('settings.deleteAccountWrongPin'))
+      },
+      onError: () => setError(t('settings.deleteAccountWrongPin'))
+    })
+  }
+
+  return (
+    <section className="rounded-lg border border-destructive/40 bg-card">
+      <h2 className="flex items-center gap-2 border-b border-destructive/40 px-5 py-3 text-sm font-semibold text-destructive">
+        <AlertTriangle className="size-4" />
+        {t('settings.dangerZone')}
+      </h2>
+      <div className="flex items-center justify-between gap-4 p-5">
+        <p className="text-sm text-muted-foreground">{t('settings.deleteAccountHint')}</p>
+        <Button variant="destructive" className="shrink-0" onClick={() => setOpen(true)}>
+          <Trash2 className="size-4" />
+          {t('settings.deleteAccountButton')}
+        </Button>
+      </div>
+
+      <Modal open={open} onClose={close} title={t('settings.deleteAccountButton')}>
+        {resetting ? (
+          <p className="text-sm text-muted-foreground">{t('settings.deleteAccountResetting')}</p>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-sm font-medium text-destructive">
+              {t('settings.deleteAccountWarning')}
+            </p>
+            <p className="text-sm text-muted-foreground">{t('settings.deleteAccountPrompt')}</p>
+            <PinField onComplete={handlePin} error={error} onChange={() => setError('')} />
+          </div>
+        )}
+      </Modal>
+    </section>
+  )
+}
+
 export default function SettingsPage() {
   const { t } = useTranslation()
   const license = useLicenseStatus()
@@ -252,6 +310,8 @@ export default function SettingsPage() {
           </Button>
         </div>
       </Section>
+
+      <DeleteAccountSection />
     </div>
   )
 }

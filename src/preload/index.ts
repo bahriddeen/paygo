@@ -141,6 +141,10 @@ const api = {
       ipcRenderer.invoke('lock:change', { oldPin, newPin }),
     recover: (code: string): Promise<{ ok: boolean }> => ipcRenderer.invoke('lock:recover', { code })
   },
+  account: {
+    reset: (pin: string): Promise<{ ok: boolean; error?: string }> =>
+      ipcRenderer.invoke('account:reset', { pin })
+  },
   whatsapp: {
     open: (phone: string, message: string): Promise<{ ok: boolean }> =>
       ipcRenderer.invoke('shell:openWhatsapp', { phone, message })

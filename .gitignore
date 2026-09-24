@@ -10,3 +10,6 @@ tools/license-gen/keys/
 
 # Minted activation codes are sellable licenses, not source
 codes.txt
+
+# Claude Code session state, not project files
+.claude/scheduled_tasks.lock

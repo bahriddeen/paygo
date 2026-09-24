@@ -223,7 +223,14 @@
     "backupNowTip": "Tanlangan papkaga hozir zaxira nusxa yaratish.",
     "support": "Yordam",
     "supportBody": "Muammo yoki savol paydo bo'ldimi? Bizga Telegram orqali yozing.",
-    "contactTelegram": "Telegram orqali yozish"
+    "contactTelegram": "Telegram orqali yozish",
+    "dangerZone": "Xavfli zona",
+    "deleteAccountHint": "Barcha ma'lumotlarni o'chirib, qaytadan boshlash.",
+    "deleteAccountButton": "Hammasini o'chirib, qaytadan boshlash",
+    "deleteAccountWarning": "Bu BARCHA ma'lumotlarni qaytarib bo'lmaydigan tarzda o'chiradi: filiallar, mijozlar, taminotchilar, qarzlar, to'lovlar va sozlamalar. Dastur kodni qayta faollashtirishni talab qiladi.",
+    "deleteAccountPrompt": "O'chirishni tasdiqlash uchun joriy PIN-kodni kiriting.",
+    "deleteAccountWrongPin": "PIN-kod noto'g'ri",
+    "deleteAccountResetting": "Ma'lumotlar o'chirilmoqda… Dastur hozir qayta ishga tushadi."
   },
   "pages": {
     "clientsEmpty": "Mijozlar ro'yxati shu yerda bo'ladi.",

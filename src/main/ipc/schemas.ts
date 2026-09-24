@@ -61,6 +61,7 @@ export const SetPinSchema = z.object({ pin: Pin })
 export const VerifyPinSchema = z.object({ pin: z.string().max(20) })
 export const ChangePinSchema = z.object({ oldPin: z.string().max(20), newPin: Pin })
 export const RecoverSchema = z.object({ code: z.string().max(40) })
+export const ResetAccountSchema = z.object({ pin: z.string().max(20) })
 
 // z.input: the shape the renderer sends (before defaults/transforms).
 export type NewClientInput = z.input<typeof NewClientSchema>

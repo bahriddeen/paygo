@@ -138,6 +138,10 @@ export function useLockStatus() {
   return useQuery({ queryKey: ['lock-status'], queryFn: () => window.api.lock.status() })
 }
 
+export function useResetAccount() {
+  return useMutation({ mutationFn: (pin: string) => window.api.account.reset(pin) })
+}
+
 export interface ClientQuery {
   branchId: number
   search?: string

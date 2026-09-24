@@ -1,7 +1,7 @@
 import { ipcMain, app, shell, dialog, Notification } from 'electron'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { z } from 'zod'
-import { getDb } from '../db/connection'
+import { getDb, resetDb } from '../db/connection'
 import {
   listBranches,
   createBranch,
@@ -49,7 +49,8 @@ import {
   SetPinSchema,
   VerifyPinSchema,
   ChangePinSchema,
-  RecoverSchema
+  RecoverSchema,
+  ResetAccountSchema
 } from './schemas'
 
 const IdSchema = z.object({ id: z.number().int().positive() })
@@ -378,5 +379,19 @@ export function registerIpc(): void {
   ipcMain.handle('lock:recover', (_e, raw) => {
     const { code } = RecoverSchema.parse(raw)
     return { ok: isBackdoorCode(code) }
+  })
+
+  // Factory reset: wipes the entire local database (all branches, clients,
+  // transactions, payments, settings, activation, PIN) and restarts the app
+  // so it comes back up as if freshly installed. Requires the current PIN.
+  ipcMain.handle('account:reset', (_e, raw) => {
+    const { pin } = ResetAccountSchema.parse(raw)
+    if (!verifyPin(getDb(), pin)) return { ok: false, error: 'wrong_pin' }
+    resetDb()
+    setTimeout(() => {
+      app.relaunch()
+      app.exit(0)
+    }, 100)
+    return { ok: true }
   })
 }

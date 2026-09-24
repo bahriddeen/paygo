@@ -113,6 +113,15 @@ internal ones set outside the Settings UI: `activation_code_id`,
   app's UI. Anyone with filesystem access to `qarz.db` can read it directly.
   This is a known, accepted limitation (documented in the original design
   plan), not a bug.
+- **Factory reset ("Delete account")**: Settings → Danger Zone. Requires the
+  current PIN, shows a full-data-loss warning, then permanently deletes the
+  SQLite file (and WAL/SHM siblings — `src/main/db/reset.ts`) and restarts
+  the app, which comes back up on the activation screen exactly as if
+  freshly installed (activation, PIN, all branches/clients/transactions —
+  everything is gone). There is **no undo** and **no export prompt on the
+  way out** — if the shop owner wants their data first, they need to export
+  JSON *before* using this. Only ever test this against a throwaway
+  profile, never a real one.
 
 ## Product decisions worth knowing (so they don't get "fixed")
 

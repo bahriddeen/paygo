@@ -135,6 +135,12 @@ Same checks as Clients, plus:
 - [ ] JSON import (merge mode) adds data without clobbering existing
       records; (replace mode) fully replaces branch data — test both on a
       throwaway profile.
+- [ ] **Danger Zone — delete account**: on a throwaway profile only.
+      Opening the confirmation modal shows the full-data-loss warning.
+      Entering a wrong PIN shows an error and does not delete anything.
+      Entering the correct PIN wipes the database file and the app
+      relaunches to the **activation screen** (not the dashboard) — never
+      run this against a real/production profile.
 - [ ] Round-trip: export → import into a clean profile → data matches.
 - [ ] Excel export opens in a spreadsheet app and shows the debtor list
       (name, phone, per-currency owed, overdue flag, oldest debt).
