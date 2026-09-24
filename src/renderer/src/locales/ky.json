@@ -190,6 +190,8 @@
     "general": "Жалпы",
     "defaultCurrency": "Демейки валюта",
     "whatsappTemplate": "WhatsApp үлгүсү",
+    "whatsappEnabled": "WhatsApp аркылуу эскертүүлөрдү иштетүү",
+    "whatsappEnabledHint": "Өчүрүлгөн болсо, WhatsApp баскычтары эскертүүлөр барагында көрүнбөйт.",
     "templateHint": "Жеткиликтүү: {{name}}, {{amount}}, {{days}}",
     "saved": "Сакталды",
     "branchDeleteError": "Өчүрүү мүмкүн эмес: филиал бош эмес же акыркысы",

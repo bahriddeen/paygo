@@ -255,21 +255,40 @@ export default function SettingsPage() {
 
       {raw ? (
         <Section title={t('settings.whatsappTemplate')}>
-          <div className="space-y-3">
-            {(['ru', 'ky', 'uz'] as const).map((lang) => (
-              <div key={lang} className="space-y-1.5">
-                <Label>{lang.toUpperCase()}</Label>
-                <textarea
-                  className={textareaClass}
-                  rows={3}
-                  defaultValue={raw[`wa_template_${lang}`] || defaultWaTemplate(lang)}
-                  onBlur={(e) =>
-                    setSetting.mutate({ key: `wa_template_${lang}`, value: e.target.value })
-                  }
-                />
+          <div className="space-y-4">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={raw['whatsapp_enabled'] === '1'}
+                onChange={(e) =>
+                  setSetting.mutate({
+                    key: 'whatsapp_enabled',
+                    value: e.target.checked ? '1' : '0'
+                  })
+                }
+                className="size-4 rounded border-input"
+              />
+              {t('settings.whatsappEnabled')}
+            </label>
+            <p className="text-xs text-muted-foreground">{t('settings.whatsappEnabledHint')}</p>
+            {raw['whatsapp_enabled'] === '1' ? (
+              <div className="space-y-3 border-t border-border pt-4">
+                {(['ru', 'ky', 'uz'] as const).map((lang) => (
+                  <div key={lang} className="space-y-1.5">
+                    <Label>{lang.toUpperCase()}</Label>
+                    <textarea
+                      className={textareaClass}
+                      rows={3}
+                      defaultValue={raw[`wa_template_${lang}`] || defaultWaTemplate(lang)}
+                      onBlur={(e) =>
+                        setSetting.mutate({ key: `wa_template_${lang}`, value: e.target.value })
+                      }
+                    />
+                  </div>
+                ))}
+                <p className="text-xs text-muted-foreground">{t('settings.templateHint')}</p>
               </div>
-            ))}
-            <p className="text-xs text-muted-foreground">{t('settings.templateHint')}</p>
+            ) : null}
           </div>
         </Section>
       ) : null}

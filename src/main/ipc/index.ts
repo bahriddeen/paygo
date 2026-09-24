@@ -90,6 +90,7 @@ const CategoryRenameSchema = z.object({
 })
 const SETTING_KEYS = [
   'default_currency',
+  'whatsapp_enabled',
   'wa_template_ru',
   'wa_template_ky',
   'wa_template_uz',

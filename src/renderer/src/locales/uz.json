@@ -190,6 +190,8 @@
     "general": "Umumiy",
     "defaultCurrency": "Standart valyuta",
     "whatsappTemplate": "WhatsApp shabloni",
+    "whatsappEnabled": "WhatsApp orqali eslatmalarni yoqish",
+    "whatsappEnabledHint": "O'chirilgan bo'lsa, WhatsApp tugmalari eslatmalar sahifasida ko'rinmaydi.",
     "templateHint": "Mavjud: {{name}}, {{amount}}, {{days}}",
     "saved": "Saqlandi",
     "branchDeleteError": "O'chirib bo'lmaydi: filialda mijozlar bor yoki oxirgisi",

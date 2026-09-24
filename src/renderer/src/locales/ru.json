@@ -190,6 +190,8 @@
     "general": "Общее",
     "defaultCurrency": "Валюта по умолчанию",
     "whatsappTemplate": "Шаблон WhatsApp",
+    "whatsappEnabled": "Включить напоминания через WhatsApp",
+    "whatsappEnabledHint": "Если выключено, кнопки WhatsApp не отображаются на странице напоминаний.",
     "templateHint": "Доступно: {{name}}, {{amount}}, {{days}}",
     "saved": "Сохранено",
     "branchDeleteError": "Нельзя удалить: филиал не пустой или последний",

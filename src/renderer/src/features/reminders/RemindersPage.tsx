@@ -82,12 +82,13 @@ export default function RemindersPage() {
   }
 
   const filteredWithPhone = ctrl.filtered.filter((g) => g.phone).length
+  const waEnabled = settings['whatsapp_enabled'] === '1'
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-8 py-8">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold tracking-tight">{t('nav.reminders')}</h1>
-        {filteredWithPhone > 0 ? (
+        {waEnabled && filteredWithPhone > 0 ? (
           <Button onClick={startQueue}>
             <MessageCircle className="size-4" />
             {t('reminders.remindAll')} ({filteredWithPhone})
@@ -134,10 +135,12 @@ export default function RemindersPage() {
                     <span className="shrink-0 font-mono text-sm font-semibold tabular-nums text-destructive">
                       {amountsStr(g)}
                     </span>
-                    <Button variant="outline" size="sm" disabled={!g.phone} onClick={() => remind(g)}>
-                      <MessageCircle className="size-4" />
-                      {t('reminders.whatsapp')}
-                    </Button>
+                    {waEnabled ? (
+                      <Button variant="outline" size="sm" disabled={!g.phone} onClick={() => remind(g)}>
+                        <MessageCircle className="size-4" />
+                        {t('reminders.whatsapp')}
+                      </Button>
+                    ) : null}
                   </li>
                 ))}
               </ul>
