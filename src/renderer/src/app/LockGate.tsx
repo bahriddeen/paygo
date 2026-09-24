@@ -30,16 +30,18 @@ export function LockGate({ children }: { children: ReactNode }) {
 
   const hasPin = !!status.data?.hasPin
 
+  // A PIN now exists (whether just created or just recovered) — the next
+  // lock must show the normal verify screen, not fall back into whatever
+  // mode got us here.
+  function handleUnlocked(): void {
+    setPinCreated(true)
+    setMode('verify')
+    setUnlocked(true)
+  }
+
   if (!unlocked) {
     if (!hasPin) {
-      return (
-        <PinCreate
-          onDone={() => {
-            setPinCreated(true)
-            setUnlocked(true)
-          }}
-        />
-      )
+      return <PinCreate onDone={handleUnlocked} />
     }
     if (mode === 'recover') {
       return (
@@ -50,16 +52,14 @@ export function LockGate({ children }: { children: ReactNode }) {
       )
     }
     if (mode === 'create') {
-      return (
-        <PinCreate
-          onDone={() => {
-            setPinCreated(true)
-            setUnlocked(true)
-          }}
-        />
-      )
+      return <PinCreate onDone={handleUnlocked} />
     }
-    return <PinVerify onUnlock={() => setUnlocked(true)} onForgot={() => setMode('recover')} />
+    return (
+      <PinVerify
+        onUnlock={() => setUnlocked(true)}
+        onForgot={() => setMode('recover')}
+      />
+    )
   }
 
   return (
