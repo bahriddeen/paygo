@@ -238,6 +238,21 @@ internet). The user chose the unofficial route, informed of the risk.
 - The delay range (20–60s) is currently hardcoded in
   `AutoSendQueue.tsx`/`sendBatch` calls, not a Settings field. Worth
   exposing as a Settings control if the user wants it configurable later.
+- **`connectWa()` has a 25s timeout, error surfacing, and a 3-strikes cap
+  on silent auto-reconnect.** The original version had none of these: any
+  failure during setup (a thrown exception, or Baileys just never firing
+  a `connection.update` event at all) left the module-level `connecting`
+  flag stuck `true` forever, permanently disabling the Connect button
+  with no recovery except restarting the whole app. `WaStatus` now
+  carries an `error` field; Settings shows it with a **Reset** button
+  (reuses `logoutWa()` — clears the session dir and all in-flight state)
+  so a stuck/corrupted session is always recoverable from the UI. Tested:
+  a fully-corrupted `creds.json` doesn't even need this — Baileys/
+  `useMultiFileAuthState` already self-heals from that specific case and
+  issues a fresh QR — but the timeout+error path is what protects against
+  whatever *doesn't* self-heal (a true network-level hang, an
+  unanticipated Baileys internal error, etc.), which the old code had no
+  defense against at all.
 
 ## Product decisions worth knowing (so they don't get "fixed")
 

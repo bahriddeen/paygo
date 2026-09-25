@@ -177,6 +177,15 @@ function WhatsAppConnection() {
     )
   }
 
+  const errorText =
+    status.error === 'timeout'
+      ? t('settings.waErrorTimeout')
+      : status.error === 'connection_failed'
+        ? t('settings.waErrorFailed')
+        : status.error
+          ? t('settings.waErrorGeneric')
+          : null
+
   return (
     <div className="space-y-3 rounded-md border border-border bg-muted/30 p-3">
       <div className="flex items-center justify-between gap-4">
@@ -194,6 +203,14 @@ function WhatsAppConnection() {
         <div className="flex flex-col items-center gap-2 py-2">
           <img src={qr} alt="QR" className="size-48 rounded-md border border-border" />
           <p className="text-center text-xs text-muted-foreground">{t('settings.waScanHint')}</p>
+        </div>
+      ) : null}
+      {errorText ? (
+        <div className="flex items-center justify-between gap-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
+          <p className="text-xs text-destructive">{errorText}</p>
+          <Button variant="outline" size="sm" className="shrink-0" onClick={logout}>
+            {t('settings.waReset')}
+          </Button>
         </div>
       ) : null}
     </div>

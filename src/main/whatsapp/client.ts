@@ -14,7 +14,7 @@ import QRCode from 'qrcode'
  * eliminate) that risk. See INFO.md before touching this module.
  */
 
-export type WaStatus = { connected: boolean; phone: string | null; connecting: boolean }
+export type WaStatus = { connected: boolean; phone: string | null; connecting: boolean; error: string | null }
 export type BatchItem = { phone: string; message: string; name: string }
 export type BatchProgress = {
   sent: number
@@ -33,10 +33,16 @@ type Listeners = {
   done: (d: BatchDone) => void
 }
 
+const CONNECT_TIMEOUT_MS = 25_000
+const MAX_CONSECUTIVE_FAILURES = 3
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let sock: any = null
 let connecting = false
 let connectedPhone: string | null = null
+let lastError: string | null = null
+let connectAttempt = 0
+let consecutiveFailures = 0
 let batchCancelled = false
 let batchRunning = false
 
@@ -61,65 +67,105 @@ function cleanPhone(id: string | undefined): string | null {
 }
 
 export function getStatus(): WaStatus {
-  return { connected: !!connectedPhone, phone: connectedPhone, connecting }
+  return { connected: !!connectedPhone, phone: connectedPhone, connecting, error: lastError }
+}
+
+function failAttempt(attemptId: number, message: string): void {
+  if (attemptId !== connectAttempt) return // a newer attempt has already superseded this one
+  connecting = false
+  sock = null
+  lastError = message
+  listeners.status(getStatus())
 }
 
 export async function connectWa(): Promise<void> {
   if (sock || connecting) return
   connecting = true
+  lastError = null
   listeners.status(getStatus())
 
-  const {
-    default: makeWASocket,
-    useMultiFileAuthState,
-    DisconnectReason
-  } = await import('@whiskeysockets/baileys')
-  const { state, saveCreds } = await useMultiFileAuthState(sessionDir())
+  const attemptId = ++connectAttempt
+  let gotFirstEvent = false
 
-  sock = makeWASocket({ auth: state, printQRInTerminal: false })
-  sock.ev.on('creds.update', saveCreds)
+  const timeout = setTimeout(() => {
+    if (gotFirstEvent) return // a real signal already arrived; let Baileys' own protocol handle it
+    failAttempt(attemptId, 'timeout')
+  }, CONNECT_TIMEOUT_MS)
 
-  sock.ev.on('connection.update', (update: Record<string, unknown>) => {
-    const { connection, qr, lastDisconnect } = update as {
-      connection?: string
-      qr?: string
-      lastDisconnect?: { error?: { output?: { statusCode?: number } } }
-    }
+  try {
+    const {
+      default: makeWASocket,
+      useMultiFileAuthState,
+      DisconnectReason
+    } = await import('@whiskeysockets/baileys')
+    const { state, saveCreds } = await useMultiFileAuthState(sessionDir())
 
-    if (qr) {
-      QRCode.toDataURL(qr)
-        .then((dataUrl) => listeners.qr(dataUrl))
-        .catch(() => {})
-    }
+    if (attemptId !== connectAttempt) return // superseded while awaiting setup
+    sock = makeWASocket({ auth: state, printQRInTerminal: false })
+    sock.ev.on('creds.update', saveCreds)
 
-    if (connection === 'open') {
-      connecting = false
-      connectedPhone = cleanPhone(sock.user?.id)
-      listeners.status(getStatus())
-    }
+    sock.ev.on('connection.update', (update: Record<string, unknown>) => {
+      if (attemptId !== connectAttempt) return
+      gotFirstEvent = true
+      clearTimeout(timeout)
 
-    if (connection === 'close') {
-      connecting = false
-      connectedPhone = null
-      const statusCode = lastDisconnect?.error?.output?.statusCode
-      const loggedOut = statusCode === DisconnectReason.loggedOut
-      sock = null
-      listeners.status(getStatus())
-      if (!loggedOut) {
-        // Transient disconnect (network, server restart) — try again.
-        void connectWa()
+      const { connection, qr, lastDisconnect } = update as {
+        connection?: string
+        qr?: string
+        lastDisconnect?: { error?: { output?: { statusCode?: number } } }
       }
-    }
-  })
+
+      if (qr) {
+        QRCode.toDataURL(qr)
+          .then((dataUrl) => listeners.qr(dataUrl))
+          .catch(() => {})
+      }
+
+      if (connection === 'open') {
+        connecting = false
+        lastError = null
+        consecutiveFailures = 0
+        connectedPhone = cleanPhone(sock.user?.id)
+        listeners.status(getStatus())
+      }
+
+      if (connection === 'close') {
+        connecting = false
+        connectedPhone = null
+        sock = null
+        const statusCode = lastDisconnect?.error?.output?.statusCode
+        const loggedOut = statusCode === DisconnectReason.loggedOut
+        if (loggedOut) {
+          consecutiveFailures = 0
+          listeners.status(getStatus())
+          return
+        }
+        consecutiveFailures++
+        if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+          lastError = 'connection_failed'
+          listeners.status(getStatus())
+          return
+        }
+        listeners.status(getStatus())
+        void connectWa() // transient disconnect (network, server restart) — try again
+      }
+    })
+  } catch (err) {
+    clearTimeout(timeout)
+    failAttempt(attemptId, err instanceof Error ? err.message : String(err))
+  }
 }
 
 export async function logoutWa(): Promise<void> {
+  connectAttempt++ // supersede any in-flight connect attempt
+  consecutiveFailures = 0
   if (sock) {
     await sock.logout().catch(() => {})
     sock = null
   }
   connecting = false
   connectedPhone = null
+  lastError = null
   rmSync(sessionDir(), { recursive: true, force: true })
   listeners.status(getStatus())
 }
