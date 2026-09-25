@@ -9,7 +9,8 @@ import {
 } from '../whatsapp/client'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { z } from 'zod'
-import { getDb, initDb, resetDb } from '../db/connection'
+import { getDb } from '../db/connection'
+import { wipeDatabase } from '../db/reset'
 import { hasDemoData, clearDemoData, maybeSeedDemoData } from '../db/demoSeed'
 import {
   listBranches,
@@ -393,9 +394,10 @@ export function registerIpc(): void {
   })
 
   // Factory reset: wipes the entire local database (all branches, clients,
-  // transactions, payments, settings, activation, PIN), reopens a fresh
-  // migrated DB, and reloads the window so the app comes back up as if
-  // freshly installed. Requires the current PIN.
+  // transactions, payments, settings, activation, PIN) on the same live
+  // connection (see src/main/db/reset.ts for why not close+delete+reopen
+  // the file), reseeds demo data, and reloads the window so the app comes
+  // back up as if freshly installed. Requires the current PIN.
   //
   // Deliberately reloads the existing window rather than app.relaunch() +
   // app.exit(): relaunch spawns a new OS process, and on macOS that goes
@@ -407,10 +409,10 @@ export function registerIpc(): void {
   // URL has no such dependency and works identically in dev and prod.
   ipcMain.handle('account:reset', (_e, raw) => {
     const { pin } = ResetAccountSchema.parse(raw)
-    if (!verifyPin(getDb(), pin)) return { ok: false, error: 'wrong_pin' }
-    resetDb()
-    const fresh = initDb()
-    maybeSeedDemoData(fresh) // a factory reset is a fresh install in every other way too
+    const db = getDb()
+    if (!verifyPin(db, pin)) return { ok: false, error: 'wrong_pin' }
+    wipeDatabase(db)
+    maybeSeedDemoData(db) // a factory reset is a fresh install in every other way too
     setTimeout(() => {
       for (const win of BrowserWindow.getAllWindows()) win.webContents.reload()
     }, 150)
