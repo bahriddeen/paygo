@@ -10,7 +10,7 @@ import {
 import { readFileSync, writeFileSync } from 'node:fs'
 import { z } from 'zod'
 import { getDb, initDb, resetDb } from '../db/connection'
-import { hasDemoData, clearDemoData } from '../db/demoSeed'
+import { hasDemoData, clearDemoData, maybeSeedDemoData } from '../db/demoSeed'
 import {
   listBranches,
   createBranch,
@@ -409,7 +409,8 @@ export function registerIpc(): void {
     const { pin } = ResetAccountSchema.parse(raw)
     if (!verifyPin(getDb(), pin)) return { ok: false, error: 'wrong_pin' }
     resetDb()
-    initDb()
+    const fresh = initDb()
+    maybeSeedDemoData(fresh) // a factory reset is a fresh install in every other way too
     setTimeout(() => {
       for (const win of BrowserWindow.getAllWindows()) win.webContents.reload()
     }, 150)

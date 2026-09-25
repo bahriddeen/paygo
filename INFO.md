@@ -116,13 +116,15 @@ internal ones set outside the Settings UI: `activation_code_id`,
 - **Factory reset ("Delete account")**: Settings → Danger Zone. Requires the
   current PIN, shows a full-data-loss warning, then permanently deletes the
   SQLite file (and WAL/SHM siblings — `src/main/db/reset.ts`), reopens a
-  fresh migrated DB, and **reloads the window in place** so the app comes
-  back up on the activation screen exactly as if freshly installed
-  (activation, PIN, all branches/clients/transactions — everything is
-  gone). There is **no undo** and **no export prompt on the way out** — if
-  the shop owner wants their data first, they need to export JSON *before*
-  using this. Only ever test this against a throwaway profile, never a
-  real one.
+  fresh migrated DB, **re-seeds demo data** (`maybeSeedDemoData()` — the
+  fresh DB has no `demo_seeded` setting either, so this behaves exactly
+  like a genuinely new install), and **reloads the window in place** so
+  the app comes back up on the activation screen exactly as if freshly
+  installed (activation, PIN, all branches/clients/transactions —
+  everything is gone, replaced by demo data once re-activated). There is
+  **no undo** and **no export prompt on the way out** — if the shop owner
+  wants their data first, they need to export JSON *before* using this.
+  Only ever test this against a throwaway profile, never a real one.
   - Deliberately implemented as `resetDb() + initDb() + webContents.reload()`
     rather than `app.relaunch() + app.exit()`. The relaunch approach spawns
     a whole new OS process, and on macOS that goes through Launch Services,
