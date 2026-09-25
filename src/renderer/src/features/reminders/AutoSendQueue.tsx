@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button'
 import type { QueueDebtor } from './ReminderQueue'
 import type { BatchProgress, BatchDone } from '@/lib/api'
 
-const MIN_DELAY_SEC = 10
-const MAX_DELAY_SEC = 30
+const MIN_DELAY_SEC = 20
+const MAX_DELAY_SEC = 60
 
 /**
  * Auto-sends the queue via the linked WhatsApp connection (Baileys), one

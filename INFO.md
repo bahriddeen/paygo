@@ -150,7 +150,7 @@ verification, dedicated business number, paid per-conversation, needs live
 internet). The user chose the unofficial route, informed of the risk.
 
 - **Ban-risk mitigation**: `sendBatch()` enforces a randomized delay
-  (currently hardcoded 10–30s, matching what the user asked for) between
+  (currently hardcoded 20–60s, matching what the user asked for) between
   each message in a batch — this is a mitigation, not a guarantee. Batch-
   sending to many different people in a row is exactly the pattern
   WhatsApp's abuse detection targets. If banned, the shop owner loses
@@ -182,7 +182,7 @@ internet). The user chose the unofficial route, informed of the risk.
   answer when this was discussed, given the app also has no background
   process (see below), so "recurring" could only ever mean "check on
   next launch," which the user chose to skip for now rather than build.
-- The delay range (10–30s) is currently hardcoded in
+- The delay range (20–60s) is currently hardcoded in
   `AutoSendQueue.tsx`/`sendBatch` calls, not a Settings field. Worth
   exposing as a Settings control if the user wants it configurable later.
 

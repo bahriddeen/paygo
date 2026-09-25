@@ -145,7 +145,7 @@
     "statusFailed": "Yuborilmadi",
     "statusSending": "Yuborilmoqda…",
     "statusPending": "Navbatda",
-    "autoSendDelayHint": "Raqam bloklanish xavfini kamaytirish uchun xabarlar orasida 10–30 soniya pauza qo'yiladi.",
+    "autoSendDelayHint": "Raqam bloklanish xavfini kamaytirish uchun xabarlar orasida 20–60 soniya pauza qo'yiladi.",
     "autoSendDone": "Tayyor: {{ok}} yuborildi, {{fail}} muvaffaqiyatsiz.",
     "autoSendCancelled": "To'xtatildi. {{total}} tadan {{ok}} yuborildi.",
     "waNotConnectedTitle": "WhatsApp ulanmagan",

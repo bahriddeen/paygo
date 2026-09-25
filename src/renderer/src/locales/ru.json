@@ -145,7 +145,7 @@
     "statusFailed": "Не отправлено",
     "statusSending": "Отправка…",
     "statusPending": "В очереди",
-    "autoSendDelayHint": "Между сообщениями делается пауза 10–30 секунд, чтобы снизить риск блокировки номера.",
+    "autoSendDelayHint": "Между сообщениями делается пауза 20–60 секунд, чтобы снизить риск блокировки номера.",
     "autoSendDone": "Готово: отправлено {{ok}}, не удалось {{fail}}.",
     "autoSendCancelled": "Остановлено. Отправлено {{ok}} из {{total}}.",
     "waNotConnectedTitle": "WhatsApp не подключён",

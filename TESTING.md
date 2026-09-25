@@ -137,7 +137,7 @@ owner's real one**, until the ban risk is better understood in practice.
       `userData/whatsapp-session/`).
 - [ ] With it connected, "Remind All" opens the auto-send queue directly
       (no manual-vs-connect prompt) and sends each message with a
-      10–30s randomized gap between them — confirm the delay is actually
+      20–60s randomized gap between them — confirm the delay is actually
       happening, not instant.
 - [ ] Each row shows a spinner while sending, then a checkmark (sent) or
       an X (failed, e.g. an invalid/unregistered number) — one failure
