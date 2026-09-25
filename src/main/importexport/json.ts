@@ -2,15 +2,17 @@ import type { DatabaseSync } from 'node:sqlite'
 
 export interface BranchDump {
   name: string
-  categories: { id: number; name: string }[]
+  categories: { id: number; name: string; kind: string }[]
   clients: {
     id: number
     group_id: number | null
     name: string
+    kind: string
     phone: string | null
     description: string | null
     trust_level: number
     created_at: number
+    is_demo: number
   }[]
   transactions: {
     id: number
@@ -21,6 +23,7 @@ export interface BranchDump {
     description: string | null
     issued_at: number
     due_at: number | null
+    is_demo: number
   }[]
   payments: {
     id: number
@@ -45,13 +48,13 @@ function dumpBranch(db: DatabaseSync, branchId: number, name: string): BranchDum
   const all = <T>(sql: string): T[] => db.prepare(sql).all(branchId) as unknown as T[]
   return {
     name,
-    categories: all('SELECT id, name FROM client_groups WHERE branch_id = ?'),
+    categories: all('SELECT id, name, kind FROM client_groups WHERE branch_id = ?'),
     clients: all(
-      `SELECT id, group_id, name, phone, description, trust_level, created_at
+      `SELECT id, group_id, name, kind, phone, description, trust_level, created_at, is_demo
        FROM clients WHERE branch_id = ? AND archived_at IS NULL`
     ),
     transactions: all(
-      `SELECT id, client_id, direction, amount, currency, description, issued_at, due_at
+      `SELECT id, client_id, direction, amount, currency, description, issued_at, due_at, is_demo
        FROM transactions WHERE branch_id = ?`
     ),
     payments: all(
@@ -80,8 +83,8 @@ function insertBranchDump(db: DatabaseSync, dump: BranchDump, targetBranchId: nu
   const catId = new Map<number, number>()
   for (const c of dump.categories) {
     const info = db
-      .prepare('INSERT INTO client_groups (branch_id, name) VALUES (?, ?)')
-      .run(targetBranchId, c.name)
+      .prepare('INSERT INTO client_groups (branch_id, name, kind) VALUES (?, ?, ?)')
+      .run(targetBranchId, c.name, c.kind ?? 'client')
     catId.set(c.id, Number(info.lastInsertRowid))
   }
 
@@ -89,17 +92,19 @@ function insertBranchDump(db: DatabaseSync, dump: BranchDump, targetBranchId: nu
   for (const c of dump.clients) {
     const info = db
       .prepare(
-        `INSERT INTO clients (branch_id, group_id, name, phone, description, trust_level, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO clients (branch_id, group_id, name, kind, phone, description, trust_level, created_at, is_demo)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         targetBranchId,
         c.group_id != null ? (catId.get(c.group_id) ?? null) : null,
         c.name,
+        c.kind ?? 'client',
         c.phone,
         c.description,
         c.trust_level,
-        c.created_at
+        c.created_at,
+        c.is_demo ?? 0
       )
     clientId.set(c.id, Number(info.lastInsertRowid))
   }
@@ -110,8 +115,8 @@ function insertBranchDump(db: DatabaseSync, dump: BranchDump, targetBranchId: nu
     if (mappedClient == null) continue // orphan guard
     const info = db
       .prepare(
-        `INSERT INTO transactions (branch_id, client_id, direction, amount, currency, description, issued_at, due_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO transactions (branch_id, client_id, direction, amount, currency, description, issued_at, due_at, is_demo)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         targetBranchId,
@@ -121,7 +126,8 @@ function insertBranchDump(db: DatabaseSync, dump: BranchDump, targetBranchId: nu
         tx.currency,
         tx.description,
         tx.issued_at,
-        tx.due_at
+        tx.due_at,
+        tx.is_demo ?? 0
       )
     txnId.set(tx.id, Number(info.lastInsertRowid))
   }

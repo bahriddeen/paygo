@@ -62,6 +62,40 @@ describe('importData replace', () => {
   })
 })
 
+describe('exportData / importData preserve kind (client vs supplier)', () => {
+  test('a supplier and a supplier category stay suppliers after an export/import round trip', () => {
+    const src = createDatabase(':memory:')
+    const supplierCat = createCategory(src, 1, 'Vendors', 'supplier')
+    const supplier = createClient(src, {
+      branch_id: 1,
+      name: 'Nur Savdo',
+      kind: 'supplier',
+      group_id: supplierCat.id
+    })
+    createTransaction(src, {
+      branch_id: 1,
+      client_id: supplier.id,
+      direction: 'borrow',
+      amount: 75000,
+      currency: 'UZS'
+    })
+    const dump = exportData(src, { branchId: 1 })
+
+    const dest = createDatabase(':memory:')
+    importData(dest, dump, { mode: 'replace' })
+
+    const importedSupplier = listClients(dest, 1, { kind: 'supplier' })[0]
+    expect(importedSupplier?.name).toBe('Nur Savdo')
+    expect(importedSupplier?.kind).toBe('supplier')
+
+    const importedCats = listCategories(dest, 1, 'supplier')
+    expect(importedCats.map((c) => c.name)).toEqual(['Vendors'])
+
+    // The supplier must not have quietly become a client.
+    expect(listClients(dest, 1, { kind: 'client' })).toHaveLength(0)
+  })
+})
+
 describe('importData merge', () => {
   test('merges without colliding with existing ids and preserves balances', () => {
     const src = createDatabase(':memory:')

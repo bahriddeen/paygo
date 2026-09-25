@@ -49,6 +49,15 @@ architecture doc for a human.
   this); check this whenever adding a new payments query.
 - Migrations (`src/main/db/migrations.ts`) are append-only — never edit a
   shipped one.
+- **When a migration adds a column, check `src/main/importexport/json.ts`
+  too.** `kind` (v2) and `is_demo` (v3) both shipped without being added
+  to `exportData`'s SELECTs or `importData`'s INSERTs — every supplier
+  silently became a plain client on any export→import round-trip (JSON
+  export, backup/restore, and merge/replace import all share this code
+  path) since `kind` defaults to `'client'` on insert when omitted. Fixed,
+  but the same class of bug will recur for any future column that isn't
+  explicitly threaded through `BranchDump` and both directions of
+  `dumpBranch()`/`insertBranchDump()`.
 
 ## Licensing
 
@@ -114,26 +123,38 @@ internal ones set outside the Settings UI: `activation_code_id`,
   This is a known, accepted limitation (documented in the original design
   plan), not a bug.
 - **Factory reset ("Delete account")**: Settings → Danger Zone. Requires the
-  current PIN, shows a full-data-loss warning, then permanently deletes the
-  SQLite file (and WAL/SHM siblings — `src/main/db/reset.ts`), reopens a
-  fresh migrated DB, **re-seeds demo data** (`maybeSeedDemoData()` — the
-  fresh DB has no `demo_seeded` setting either, so this behaves exactly
-  like a genuinely new install), and **reloads the window in place** so
-  the app comes back up on the activation screen exactly as if freshly
-  installed (activation, PIN, all branches/clients/transactions —
-  everything is gone, replaced by demo data once re-activated). There is
-  **no undo** and **no export prompt on the way out** — if the shop owner
-  wants their data first, they need to export JSON *before* using this.
-  Only ever test this against a throwaway profile, never a real one.
-  - Deliberately implemented as `resetDb() + initDb() + webContents.reload()`
-    rather than `app.relaunch() + app.exit()`. The relaunch approach spawns
-    a whole new OS process, and on macOS that goes through Launch Services,
-    which doesn't reliably pass through `ELECTRON_RENDERER_URL` (the dev
-    server URL `electron-vite dev` sets) — the relaunched instance then had
+  current PIN, shows a full-data-loss warning, then wipes every table via
+  SQL on the live connection (`wipeDatabase()`, `src/main/db/reset.ts`),
+  reseeds the one default branch, **re-seeds demo data**
+  (`maybeSeedDemoData()`), and **reloads the window in place** so the app
+  comes back up on the activation screen exactly as if freshly installed
+  (activation, PIN, all branches/clients/transactions — everything is
+  gone, replaced by demo data once re-activated). There is **no undo**
+  and **no export prompt on the way out** — if the shop owner wants their
+  data first, they need to export JSON *before* using this. Only ever
+  test this against a throwaway profile, never a real one.
+  - Deliberately wipes data via `DELETE FROM` on the same live connection
+    rather than closing the connection and deleting/recreating the SQLite
+    file. An earlier version did close+unlink+reopen (and, separately,
+    reloaded via `webContents.reload()` rather than `app.relaunch()` for
+    the dev-mode reasons below) — that unlink reliably threw `EBUSY` on
+    Windows CI, even through a ~3.75s retry-with-backoff window. This
+    isn't a timing race: `node:sqlite` is still experimental and its
+    `close()` does not reliably release the file handle on Windows before
+    an immediate unlink, so no amount of retrying fixes it. Wiping rows in
+    place never touches file-handle lifecycle at all, sidestepping the
+    problem entirely — same technique `clearDemoData()` already used
+    safely. **Don't reintroduce close+delete+reopen here.**
+  - The window-reload approach itself (vs. `app.relaunch() + app.exit()`)
+    is unrelated and still correct: relaunch spawns a whole new OS
+    process, and on macOS that goes through Launch Services, which
+    doesn't reliably pass through `ELECTRON_RENDERER_URL` (the dev server
+    URL `electron-vite dev` sets) — the relaunched instance then had
     nothing to load in `npm run dev` (`out/renderer/index.html` doesn't
     exist outside a production build) and showed a blank window. Reloading
     the existing window's already-loaded URL has no such dependency and
-    behaves identically in dev and prod. Don't reintroduce relaunch here.
+    behaves identically in dev and prod. Don't reintroduce relaunch here
+    either.
 
 ## Demo data on first launch
 

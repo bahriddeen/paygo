@@ -200,6 +200,9 @@ owner's real one**, until the ban risk is better understood in practice.
 - [ ] JSON import (merge mode) adds data without clobbering existing
       records; (replace mode) fully replaces branch data — test both on a
       throwaway profile.
+- [ ] Round-trip a **supplier** (not just a client) through export then
+      import — must still be a supplier afterward, on the Suppliers page,
+      not silently reclassified as a client. Same for a supplier category.
 - [ ] **Danger Zone — delete account**: on a throwaway profile only.
       Opening the confirmation modal shows the full-data-loss warning.
       Entering a wrong PIN shows an error and does not delete anything.
