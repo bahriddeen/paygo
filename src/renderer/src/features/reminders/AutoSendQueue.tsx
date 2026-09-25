@@ -74,23 +74,35 @@ export function AutoSendQueue({
           </div>
         </div>
 
-        <ul className="max-h-72 space-y-1 overflow-y-auto">
+        <ul className="max-h-72 space-y-1 overflow-y-auto rounded-md border border-border">
           {debtors.map((d, i) => {
             const result = results[i]
+            const sending = i === sentCount && !done && result === null
             return (
               <li
                 key={d.client_id}
-                className="flex items-center justify-between gap-3 rounded-md px-2 py-1.5 text-sm"
+                className="flex items-center justify-between gap-3 border-b border-border px-3 py-2 text-sm last:border-b-0"
               >
                 <span className="truncate">{d.name}</span>
                 {result === true ? (
-                  <CircleCheck className="size-4 shrink-0 text-primary" />
+                  <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-primary">
+                    {t('reminders.statusSent')}
+                    <CircleCheck className="size-4" />
+                  </span>
                 ) : result === false ? (
-                  <XCircle className="size-4 shrink-0 text-destructive" />
-                ) : i === sentCount && !done ? (
-                  <Loader2 className="size-4 shrink-0 animate-spin text-muted-foreground" />
+                  <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-destructive">
+                    {t('reminders.statusFailed')}
+                    <XCircle className="size-4" />
+                  </span>
+                ) : sending ? (
+                  <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+                    {t('reminders.statusSending')}
+                    <Loader2 className="size-4 animate-spin" />
+                  </span>
                 ) : (
-                  <span className="size-4 shrink-0" />
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {t('reminders.statusPending')}
+                  </span>
                 )}
               </li>
             )
