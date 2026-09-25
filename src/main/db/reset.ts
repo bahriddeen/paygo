@@ -6,13 +6,14 @@ const sleepSync = (ms: number): void => {
 }
 
 /**
- * Windows can hold a file handle for a few milliseconds after close()
- * returns (antivirus/indexer scans, deferred handle release) — unlike
- * macOS/Linux, where an unlink right after close() is always safe. A
- * handful of short retries absorbs that without changing behavior
- * anywhere else.
+ * Windows can hold a file handle after close() returns for longer than a
+ * few milliseconds under load (antivirus/indexer scans, deferred handle
+ * release, busy CI runners) — unlike macOS/Linux, where an unlink right
+ * after close() is always safe. Retry with backoff over a couple of
+ * seconds total; still fast enough that a user triggering this (factory
+ * reset / clear demo data) won't perceive the delay.
  */
-function unlinkWithRetry(path: string, attempts = 5): void {
+function unlinkWithRetry(path: string, attempts = 10): void {
   for (let i = 0; i < attempts; i++) {
     try {
       unlinkSync(path)
@@ -20,7 +21,7 @@ function unlinkWithRetry(path: string, attempts = 5): void {
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code
       if (i === attempts - 1 || (code !== 'EBUSY' && code !== 'EPERM')) throw err
-      sleepSync(50)
+      sleepSync(Math.min(50 * 2 ** i, 500))
     }
   }
 }
