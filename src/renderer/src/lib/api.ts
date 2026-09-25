@@ -146,6 +146,14 @@ export function useLockStatus() {
   return useQuery({ queryKey: ['lock-status'], queryFn: () => window.api.lock.status() })
 }
 
+export function useDemoStatus() {
+  return useQuery({ queryKey: ['demo-status'], queryFn: () => window.api.demo.status() })
+}
+
+export function useClearDemoData() {
+  return useMutation({ mutationFn: () => window.api.demo.clear() })
+}
+
 export function useResetAccount() {
   return useMutation({ mutationFn: (pin: string) => window.api.account.reset(pin) })
 }

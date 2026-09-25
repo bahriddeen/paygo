@@ -19,7 +19,9 @@
     "comingSoon": "Keyingi yangilanishda qo'shiladi",
     "cancel": "Bekor qilish",
     "save": "Saqlash",
-    "edit": "Tahrirlash"
+    "edit": "Tahrirlash",
+    "startFresh": "Ishni boshlash",
+    "startFreshHint": "Demo ma'lumotlarni (mijozlar, taminotchilar, operatsiyalar) o'chirib, toza ro'yxat bilan boshlaydi."
   },
   "clients": {
     "addClient": "Mijoz qo'shish",

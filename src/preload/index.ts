@@ -146,6 +146,10 @@ const api = {
     reset: (pin: string): Promise<{ ok: boolean; error?: string }> =>
       ipcRenderer.invoke('account:reset', { pin })
   },
+  demo: {
+    status: (): Promise<{ hasDemoData: boolean }> => ipcRenderer.invoke('demo:status'),
+    clear: (): Promise<{ ok: boolean }> => ipcRenderer.invoke('demo:clear')
+  },
   whatsapp: {
     open: (phone: string, message: string): Promise<{ ok: boolean }> =>
       ipcRenderer.invoke('shell:openWhatsapp', { phone, message }),

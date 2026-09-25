@@ -10,6 +10,7 @@ import {
 import { readFileSync, writeFileSync } from 'node:fs'
 import { z } from 'zod'
 import { getDb, initDb, resetDb } from '../db/connection'
+import { hasDemoData, clearDemoData } from '../db/demoSeed'
 import {
   listBranches,
   createBranch,
@@ -452,6 +453,15 @@ export function registerIpc(): void {
   })
   ipcMain.handle('whatsapp:cancelBatch', () => {
     cancelBatch()
+    return { ok: true }
+  })
+
+  ipcMain.handle('demo:status', () => ({ hasDemoData: hasDemoData(getDb()) }))
+  ipcMain.handle('demo:clear', () => {
+    clearDemoData(getDb())
+    setTimeout(() => {
+      for (const win of BrowserWindow.getAllWindows()) win.webContents.reload()
+    }, 150)
     return { ok: true }
   })
 }

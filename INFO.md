@@ -133,6 +133,36 @@ internal ones set outside the Settings UI: `activation_code_id`,
     the existing window's already-loaded URL has no such dependency and
     behaves identically in dev and prod. Don't reintroduce relaunch here.
 
+## Demo data on first launch
+
+A genuinely fresh install auto-seeds **15 demo clients, 5 demo suppliers,
+and 100 demo transactions** (`src/main/db/demoSeed.ts`, triggered once from
+`main/index.ts` via `maybeSeedDemoData()`) so the app isn't an empty shell
+on first open — dates are generated relative to `Date.now()` at seed time,
+not hardcoded, so overdue/due-soon reminders look current whenever someone
+actually installs the app.
+
+- Every demo row is tagged `is_demo = 1` (migration v3, `clients` and
+  `transactions`). A red **"Start"** button in the top bar (before the
+  language selector) appears only while demo data exists; clicking it
+  calls `clearDemoData()` **immediately, with no confirmation** (a
+  deliberate choice — it only ever removes demo/fake data) and reloads the
+  window, same reload pattern as the account-reset feature. Note this
+  means the **PIN screen reappears** after clearing, since reload
+  re-mounts the whole app — that's expected, not a bug.
+- Seeding is guarded by a `demo_seeded` setting so it only ever happens
+  once per install, even if the shop owner later deletes all their real
+  data — it will not come back.
+- `clearDemoData()` is careful about a demo client that's since gained a
+  **real** (non-demo) transaction: it deletes that client's demo
+  transactions but keeps the client itself, since deleting it would
+  either orphan real data or hit the `ON DELETE RESTRICT` FK constraint
+  on `transactions.client_id`.
+- Demo data is invisible to the "Delete account" factory reset's warning
+  copy and to backups — it's just regular rows with a flag, included in
+  JSON export/import like anything else. If a shop owner exports before
+  clicking Start, their backup will include the demo data too.
+
 ## WhatsApp auto-send (unofficial, opt-in, ban risk)
 
 `src/main/whatsapp/client.ts` uses **Baileys** (`@whiskeysockets/baileys`) to

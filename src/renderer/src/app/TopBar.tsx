@@ -6,6 +6,7 @@ import { useTheme } from './ThemeProvider'
 import { useBranch } from './BranchProvider'
 import { useLock } from './LockGate'
 import { LANGUAGES, setLanguage, type LanguageCode } from '@/lib/i18n'
+import { useDemoStatus, useClearDemoData } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
 
@@ -22,6 +23,8 @@ export function TopBar() {
   const { branches, activeBranchId, setActiveBranchId } = useBranch()
   const { canLock, lock } = useLock()
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const demoStatus = useDemoStatus()
+  const clearDemo = useClearDemoData()
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent): void {
@@ -80,6 +83,18 @@ export function TopBar() {
       </label>
 
       <div className="flex items-center gap-2">
+        {demoStatus.data?.hasDemoData ? (
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={clearDemo.isPending}
+            title={t('common.startFreshHint')}
+            onClick={() => clearDemo.mutate()}
+          >
+            {t('common.startFresh')}
+          </Button>
+        ) : null}
+
         <select
           aria-label={t('common.language')}
           value={i18n.language}

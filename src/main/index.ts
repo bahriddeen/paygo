@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { initDb } from './db/connection'
 import { registerIpc } from './ipc'
 import { maybeAutoBackup } from './importexport/backup'
+import { maybeSeedDemoData } from './db/demoSeed'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -55,6 +56,7 @@ if (!gotTheLock) {
     app.setAppUserModelId('com.qarzdaftari.app')
     const db = initDb()
     registerIpc()
+    maybeSeedDemoData(db) // fresh install only, once ever
     maybeAutoBackup(db) // run a scheduled backup if one is due
     createWindow()
 

@@ -29,7 +29,34 @@ full page reload, or you'll hit the PIN lock screen again).
       new PIN, which then works on the next lock.
 - [ ] "Forgot PIN?" with a wrong code stays locked.
 
-## 2. Main dashboard
+## 2. Demo data & Start button
+
+- [ ] On a genuinely fresh profile, first launch (after activation + PIN)
+      shows **15 demo clients, 5 demo suppliers, and 100 demo transactions**
+      already populated — dashboard, Clients, Suppliers, Statistics, and
+      Reminders should all show real-looking (fake) activity, not empty
+      states.
+- [ ] Demo transaction dates are relative to **today**, not a fixed date —
+      some should show as overdue, some due soon, matching whatever "today"
+      actually is when you test.
+- [ ] A red **"Начать работу"** button appears in the top bar, immediately
+      to the left of the language selector.
+- [ ] Clicking it **immediately** clears all demo data — no confirmation
+      dialog (by design). Clients, Suppliers, and dashboard totals all go
+      back to zero/empty.
+- [ ] After clearing, the app reloads to the **PIN screen** (expected side
+      effect of the reload-based refresh, same as the Delete Account
+      flow) — re-entering the PIN lands on a clean, empty app.
+- [ ] The red button is now **gone** and does not reappear on subsequent
+      launches.
+- [ ] Add a real client, then click Start (on a fresh profile where demo
+      data still exists) — the real client must survive; only demo-tagged
+      rows are removed.
+- [ ] Quit and relaunch the app a second time on the *same* profile (before
+      ever clicking Start) — demo data must **not** be re-seeded a second
+      time on top of itself (still exactly 15/5/100).
+
+## 3. Main dashboard
 
 - [ ] Branch switcher lists branches and switching one reloads all
       figures scoped to that branch only (create a second branch and a
@@ -51,7 +78,7 @@ full page reload, or you'll hit the PIN lock screen again).
 - [ ] "New transaction" flow from the main page: pick a client, direction,
       currency, amount, issued/due dates — appears correctly afterward.
 
-## 3. Clients
+## 4. Clients
 
 - [ ] List loads, search filters by name/phone, sort options (name /
       newest / trust) all work.
@@ -69,7 +96,7 @@ full page reload, or you'll hit the PIN lock screen again).
       their largest single-currency amount, not a nonsensical summed
       total.
 
-## 4. Suppliers
+## 5. Suppliers
 
 Same checks as Clients, plus:
 
@@ -80,7 +107,7 @@ Same checks as Clients, plus:
 - [ ] Sidebar/nav label reads "Taminotchilar" in Uzbek (not the old
       "Yetkazib beruvchilar").
 
-## 5. Transactions & payments
+## 6. Transactions & payments
 
 - [ ] Amount fields accept only numeric input (no letters, correct
       handling of thousands separators if used).
@@ -92,7 +119,7 @@ Same checks as Clients, plus:
 - [ ] Currency is inherited from the parent transaction on every payment
       and can't drift.
 
-## 6. Statistics
+## 7. Statistics
 
 - [ ] Totals (owed to you / debtor count / overdue) match the dashboard
       for the same branch.
@@ -103,7 +130,7 @@ Same checks as Clients, plus:
 - [ ] "Eng ko'p qarzdorlar" (top debtors) ranks correctly per currency and
       excludes fully-settled clients.
 
-## 7. Reminders & WhatsApp
+## 8. Reminders & WhatsApp
 
 - [ ] Reminder center groups overdue vs. due-soon debts, sourced only
       from lend-direction debts.
@@ -148,7 +175,7 @@ owner's real one**, until the ban risk is better understood in practice.
       connected" again (session file actually removed, not just the UI
       state).
 
-## 8. Settings
+## 9. Settings
 
 - [ ] Switching language (ru/ky/uz) updates all visible UI text — check a
       few different pages after switching, not just Settings itself, and
@@ -180,7 +207,7 @@ owner's real one**, until the ban risk is better understood in practice.
 - [ ] Backup: choose a folder, "Backup now" writes a timestamped file
       there; scheduled backup runs automatically on launch when due.
 
-## 9. Cross-cutting
+## 10. Cross-cutting
 
 - [ ] Overdue OS notification fires on launch when there's overdue debt
       (not just via the manual test button).
@@ -192,7 +219,7 @@ owner's real one**, until the ban risk is better understood in practice.
       of the PIN lock screen (HashRouter only, no `location.href` or
       `<a>` navigations that reload the document).
 
-## 10. Packaged build (Windows)
+## 11. Packaged build (Windows)
 
 - [ ] Installer runs on a real Windows x64 machine/VM (not arm64), shows
       the SmartScreen "unknown publisher" warning if unsigned (expected

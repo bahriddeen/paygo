@@ -78,6 +78,15 @@ const MIGRATIONS: string[] = [
   ALTER TABLE clients ADD COLUMN kind TEXT NOT NULL DEFAULT 'client' CHECK (kind IN ('client','supplier'));
   ALTER TABLE client_groups ADD COLUMN kind TEXT NOT NULL DEFAULT 'client' CHECK (kind IN ('client','supplier'));
   CREATE INDEX idx_clients_branch_kind ON clients(branch_id, kind);
+  `,
+
+  // v3 — demo data marker. A brand-new install is auto-seeded with sample
+  // clients/suppliers/transactions (see src/main/db/demoSeed.ts) so the
+  // dashboard isn't empty on first launch; these rows are tagged so the
+  // "Start" button in the top bar can remove exactly them, and only them.
+  `
+  ALTER TABLE clients ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE transactions ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0;
   `
 ]
 
