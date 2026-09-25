@@ -78,7 +78,7 @@ function failAttempt(attemptId: number, message: string): void {
   listeners.status(getStatus())
 }
 
-export async function connectWa(): Promise<void> {
+export async function connectWa(opts: { isRetry?: boolean } = {}): Promise<void> {
   if (sock || connecting) return
   connecting = true
   lastError = null
@@ -98,7 +98,27 @@ export async function connectWa(): Promise<void> {
       useMultiFileAuthState,
       DisconnectReason
     } = await import('@whiskeysockets/baileys')
-    const { state, saveCreds } = await useMultiFileAuthState(sessionDir())
+
+    let { state, saveCreds } = await useMultiFileAuthState(sessionDir())
+    if (!opts.isRetry && !state.creds.registered) {
+      // A half-linked session — a QR was scanned but pairing never fully
+      // completed (interrupted by an earlier bug, a crash, or the phone
+      // unlinking this device afterward) — leaves creds.json with
+      // registered:false but the identity/keys already populated. Baileys
+      // then hangs trying to resume that instead of cleanly requesting a
+      // fresh QR. Never attempt to resume an unregistered session; always
+      // start clean instead.
+      //
+      // Only on a fresh, user-initiated connect though (isRetry false) —
+      // never on the internal reconnect-after-close below. That path can
+      // fire mid-pairing (a transient close between scanning the QR and
+      // registered flipping true is normal), and wiping there would
+      // destroy the in-progress handshake the phone is actively waiting
+      // on, which looks like the phone-side "Linking…" spinner hanging
+      // forever.
+      rmSync(sessionDir(), { recursive: true, force: true })
+      ;({ state, saveCreds } = await useMultiFileAuthState(sessionDir()))
+    }
 
     if (attemptId !== connectAttempt) return // superseded while awaiting setup
     sock = makeWASocket({ auth: state, printQRInTerminal: false })
@@ -147,7 +167,7 @@ export async function connectWa(): Promise<void> {
           return
         }
         listeners.status(getStatus())
-        void connectWa() // transient disconnect (network, server restart) — try again
+        void connectWa({ isRetry: true }) // transient disconnect — try again, keep whatever session state exists
       }
     })
   } catch (err) {
