@@ -107,13 +107,46 @@ Same checks as Clients, plus:
 
 - [ ] Reminder center groups overdue vs. due-soon debts, sourced only
       from lend-direction debts.
-- [ ] Selecting several debtors and sending a batch WhatsApp reminder
-      opens links **one at a time** (not a burst of dozens of tabs at
-      once).
+- [ ] With WhatsApp reminders disabled in Settings, no "Remind All" or
+      per-row WhatsApp buttons appear anywhere on the Reminders page.
+- [ ] With it enabled but **not connected**, clicking "Remind All" shows
+      a prompt with "Send manually" (opens the old one-at-a-time
+      click-to-chat queue) and "Connect WhatsApp" (jumps to Settings).
+- [ ] Per-row single-debtor WhatsApp button always uses manual
+      click-to-chat (`wa.me`), never auto-send, regardless of connection
+      state — only the batch "Remind All" auto-sends.
 - [ ] Message template is pre-filled and reflects the Settings template
       for the currently selected language.
 - [ ] Editing the WhatsApp template in Settings changes what gets
       pre-filled on the next send.
+
+### WhatsApp auto-send (unofficial — real ban risk, see INFO.md)
+
+**Use a secondary/burner WhatsApp number for all of this, never a shop
+owner's real one**, until the ban risk is better understood in practice.
+
+- [ ] Settings → WhatsApp Template → enabling the toggle shows a
+      "WhatsApp not connected" card with a Connect button.
+- [ ] Clicking Connect shows a real, scannable QR code within a few
+      seconds (this needs live internet access to WhatsApp's servers).
+- [ ] Scanning it with a phone (WhatsApp → Linked Devices → Link a
+      Device) flips the UI to "Connected: <phone number>" with a
+      Disconnect button.
+- [ ] Quit and relaunch the app — it should reconnect automatically
+      without a fresh QR scan (session persisted at
+      `userData/whatsapp-session/`).
+- [ ] With it connected, "Remind All" opens the auto-send queue directly
+      (no manual-vs-connect prompt) and sends each message with a
+      10–30s randomized gap between them — confirm the delay is actually
+      happening, not instant.
+- [ ] Each row shows a spinner while sending, then a checkmark (sent) or
+      an X (failed, e.g. an invalid/unregistered number) — one failure
+      must not stop the rest of the batch.
+- [ ] Cancel mid-batch stops before the next send and shows how many
+      went out vs. total.
+- [ ] Disconnect in Settings, then relaunch — should show "not
+      connected" again (session file actually removed, not just the UI
+      state).
 
 ## 8. Settings
 

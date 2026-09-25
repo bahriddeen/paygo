@@ -1,17 +1,21 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { MessageCircle, Clock, CircleCheck, Search } from 'lucide-react'
 import { useBranch } from '@/app/BranchProvider'
 import { useAppSettings } from '@/app/SettingsProvider'
 import { useTransactions } from '@/lib/api'
+import { useWhatsAppConnection } from '@/lib/useWhatsApp'
 import { formatMoney, type CurrencyCode } from '@/lib/format'
 import { formatDate, daysBetween } from '@/lib/date'
 import { useListControls } from '@/lib/useListControls'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Modal } from '@/components/ui/modal'
 import { Pager } from '@/components/ui/pager'
 import { EmptyState } from '@/components/EmptyState'
 import { ReminderQueue, type QueueDebtor } from './ReminderQueue'
+import { AutoSendQueue } from './AutoSendQueue'
 
 interface DebtorGroup {
   client_id: number
@@ -27,12 +31,19 @@ function fillTemplate(tmpl: string, vars: Record<string, string>): string {
 
 export default function RemindersPage() {
   const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
   const { activeBranchId } = useBranch()
   const { raw: settings } = useAppSettings()
+  const { status: waStatus } = useWhatsAppConnection()
   const branchId = activeBranchId ?? undefined
   const overdue = useTransactions(branchId ? { branchId, overdue: true } : undefined)
   const upcoming = useTransactions(branchId ? { branchId, dueSoonWithin: 7 * 86400 } : undefined)
-  const [queue, setQueue] = useState<QueueDebtor[] | null>(null)
+  // A "remind all" click always builds a pending list first; where it goes
+  // next depends on whether WhatsApp is linked (auto-send) or not (prompt to
+  // either connect or fall back to the manual click-to-chat queue).
+  const [pendingList, setPendingList] = useState<QueueDebtor[] | null>(null)
+  const [autoQueue, setAutoQueue] = useState<QueueDebtor[] | null>(null)
+  const [manualQueue, setManualQueue] = useState<QueueDebtor[] | null>(null)
 
   const groups = useMemo<DebtorGroup[]>(() => {
     const now = Math.floor(Date.now() / 1000)
@@ -78,7 +89,9 @@ export default function RemindersPage() {
         maxDays: g.maxDays,
         message: buildMessage(g)
       }))
-    if (list.length > 0) setQueue(list)
+    if (list.length === 0) return
+    if (waStatus.connected) setAutoQueue(list)
+    else setPendingList(list)
   }
 
   const filteredWithPhone = ctrl.filtered.filter((g) => g.phone).length
@@ -181,7 +194,37 @@ export default function RemindersPage() {
         </div>
       </section>
 
-      {queue ? <ReminderQueue debtors={queue} onClose={() => setQueue(null)} /> : null}
+      {autoQueue ? <AutoSendQueue debtors={autoQueue} onClose={() => setAutoQueue(null)} /> : null}
+      {manualQueue ? <ReminderQueue debtors={manualQueue} onClose={() => setManualQueue(null)} /> : null}
+
+      <Modal
+        open={pendingList !== null}
+        onClose={() => setPendingList(null)}
+        title={t('reminders.waNotConnectedTitle')}
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">{t('reminders.waNotConnectedBody')}</p>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setManualQueue(pendingList)
+                setPendingList(null)
+              }}
+            >
+              {t('reminders.sendManually')}
+            </Button>
+            <Button
+              onClick={() => {
+                setPendingList(null)
+                navigate('/settings')
+              }}
+            >
+              {t('reminders.goConnect')}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

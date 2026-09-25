@@ -13,6 +13,7 @@ import type {
   NewTransactionInput,
   NewPaymentInput
 } from '../main/ipc/schemas'
+import type { WaStatus, BatchItem, BatchProgress, BatchDone } from '../main/whatsapp/client'
 
 export interface TransactionQuery {
   branchId: number
@@ -147,7 +148,37 @@ const api = {
   },
   whatsapp: {
     open: (phone: string, message: string): Promise<{ ok: boolean }> =>
-      ipcRenderer.invoke('shell:openWhatsapp', { phone, message })
+      ipcRenderer.invoke('shell:openWhatsapp', { phone, message }),
+    status: (): Promise<WaStatus> => ipcRenderer.invoke('whatsapp:status'),
+    connect: (): Promise<{ ok: boolean }> => ipcRenderer.invoke('whatsapp:connect'),
+    logout: (): Promise<{ ok: boolean }> => ipcRenderer.invoke('whatsapp:logout'),
+    sendBatch: (
+      items: BatchItem[],
+      minDelaySec: number,
+      maxDelaySec: number
+    ): Promise<{ ok: boolean; error?: string }> =>
+      ipcRenderer.invoke('whatsapp:sendBatch', { items, minDelaySec, maxDelaySec }),
+    cancelBatch: (): Promise<{ ok: boolean }> => ipcRenderer.invoke('whatsapp:cancelBatch'),
+    onQr: (cb: (dataUrl: string) => void): (() => void) => {
+      const listener = (_e: unknown, dataUrl: string): void => cb(dataUrl)
+      ipcRenderer.on('whatsapp:qr', listener)
+      return () => ipcRenderer.removeListener('whatsapp:qr', listener)
+    },
+    onStatus: (cb: (status: WaStatus) => void): (() => void) => {
+      const listener = (_e: unknown, status: WaStatus): void => cb(status)
+      ipcRenderer.on('whatsapp:status', listener)
+      return () => ipcRenderer.removeListener('whatsapp:status', listener)
+    },
+    onBatchProgress: (cb: (p: BatchProgress) => void): (() => void) => {
+      const listener = (_e: unknown, p: BatchProgress): void => cb(p)
+      ipcRenderer.on('whatsapp:batch-progress', listener)
+      return () => ipcRenderer.removeListener('whatsapp:batch-progress', listener)
+    },
+    onBatchDone: (cb: (d: BatchDone) => void): (() => void) => {
+      const listener = (_e: unknown, d: BatchDone): void => cb(d)
+      ipcRenderer.on('whatsapp:batch-done', listener)
+      return () => ipcRenderer.removeListener('whatsapp:batch-done', listener)
+    }
   },
   notify: (title: string, body: string): Promise<void> =>
     ipcRenderer.invoke('notify', { title, body })
@@ -173,3 +204,4 @@ export type {
   NewTransactionInput,
   NewPaymentInput
 } from '../main/ipc/schemas'
+export type { WaStatus, BatchItem, BatchProgress, BatchDone } from '../main/whatsapp/client'

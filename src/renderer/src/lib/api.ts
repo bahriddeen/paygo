@@ -18,7 +18,11 @@ import type {
   NewPaymentInput,
   TransactionQuery,
   DebtSeriesPoint,
-  TopDebtor
+  TopDebtor,
+  WaStatus,
+  BatchItem,
+  BatchProgress,
+  BatchDone
 } from '../../../preload'
 import type { CurrencyCode } from './format'
 
@@ -40,7 +44,11 @@ export type {
   NewTransactionInput,
   NewPaymentInput,
   DebtSeriesPoint,
-  TopDebtor
+  TopDebtor,
+  WaStatus,
+  BatchItem,
+  BatchProgress,
+  BatchDone
 }
 
 export function useBranches() {

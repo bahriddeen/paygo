@@ -1,4 +1,12 @@
 import { ipcMain, app, shell, dialog, Notification, BrowserWindow } from 'electron'
+import {
+  connectWa,
+  logoutWa,
+  getStatus as getWaStatus,
+  sendBatch,
+  cancelBatch,
+  onWaEvents
+} from '../whatsapp/client'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { z } from 'zod'
 import { getDb, initDb, resetDb } from '../db/connection'
@@ -50,7 +58,8 @@ import {
   VerifyPinSchema,
   ChangePinSchema,
   RecoverSchema,
-  ResetAccountSchema
+  ResetAccountSchema,
+  WaSendBatchSchema
 } from './schemas'
 
 const IdSchema = z.object({ id: z.number().int().positive() })
@@ -403,6 +412,46 @@ export function registerIpc(): void {
     setTimeout(() => {
       for (const win of BrowserWindow.getAllWindows()) win.webContents.reload()
     }, 150)
+    return { ok: true }
+  })
+
+  // Unofficial WhatsApp auto-send (Baileys) -- see src/main/whatsapp/client.ts
+  // for the ToS/ban-risk context. Push events (qr/status/progress/done) are
+  // forwarded to every window; renderer subscribes via preload wrappers.
+  onWaEvents({
+    qr: (dataUrl) => {
+      for (const win of BrowserWindow.getAllWindows()) win.webContents.send('whatsapp:qr', dataUrl)
+    },
+    status: (status) => {
+      for (const win of BrowserWindow.getAllWindows()) win.webContents.send('whatsapp:status', status)
+    },
+    progress: (p) => {
+      for (const win of BrowserWindow.getAllWindows()) win.webContents.send('whatsapp:batch-progress', p)
+    },
+    done: (d) => {
+      for (const win of BrowserWindow.getAllWindows()) win.webContents.send('whatsapp:batch-done', d)
+    }
+  })
+
+  ipcMain.handle('whatsapp:status', () => getWaStatus())
+  ipcMain.handle('whatsapp:connect', () => {
+    void connectWa()
+    return { ok: true }
+  })
+  ipcMain.handle('whatsapp:logout', () => {
+    void logoutWa()
+    return { ok: true }
+  })
+  ipcMain.handle('whatsapp:sendBatch', (_e, raw) => {
+    const input = WaSendBatchSchema.parse(raw)
+    if (!getWaStatus().connected) return { ok: false, error: 'not_connected' }
+    sendBatch(input.items, { minDelaySec: input.minDelaySec, maxDelaySec: input.maxDelaySec }).catch(
+      () => {}
+    )
+    return { ok: true }
+  })
+  ipcMain.handle('whatsapp:cancelBatch', () => {
+    cancelBatch()
     return { ok: true }
   })
 }

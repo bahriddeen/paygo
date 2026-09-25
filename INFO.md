@@ -133,6 +133,59 @@ internal ones set outside the Settings UI: `activation_code_id`,
     the existing window's already-loaded URL has no such dependency and
     behaves identically in dev and prod. Don't reintroduce relaunch here.
 
+## WhatsApp auto-send (unofficial, opt-in, ban risk)
+
+`src/main/whatsapp/client.ts` uses **Baileys** (`@whiskeysockets/baileys`) to
+link the shop owner's own WhatsApp as a "linked device" (same mechanism as
+WhatsApp Web — QR code scan) and send batch reminders programmatically, with
+no manual "Send" click needed in WhatsApp itself.
+
+**This is explicitly against WhatsApp's Terms of Service.** It was built at
+the user's explicit request after being told clearly that: (a) there is no
+officially-supported way to skip the manual send click on `wa.me` links —
+that's WhatsApp's own anti-spam design, not a limitation we're working
+around; (b) the only ways to truly automate sending are this unofficial
+route (free, ban risk) or the official WhatsApp Business Platform (Meta
+verification, dedicated business number, paid per-conversation, needs live
+internet). The user chose the unofficial route, informed of the risk.
+
+- **Ban-risk mitigation**: `sendBatch()` enforces a randomized delay
+  (currently hardcoded 10–30s, matching what the user asked for) between
+  each message in a batch — this is a mitigation, not a guarantee. Batch-
+  sending to many different people in a row is exactly the pattern
+  WhatsApp's abuse detection targets. If banned, the shop owner loses
+  WhatsApp entirely on that number, not just this feature.
+- **Recommend testing with a secondary/burner WhatsApp number first**,
+  never a shop owner's primary personal/business number, until real-world
+  send volume and ban risk are better understood.
+- **Version pin matters**: `@whiskeysockets/baileys` is pinned to
+  `^6.7.24` (the `legacy` dist-tag), not the newer `6.17.x`/`7.0.0-rc*`
+  line. `6.17.16` looked newer by version number but is actually an
+  abandoned branch still affected by a message-spoofing zero-day
+  (GHSA-qvv5-jq5g-4cgg); `6.7.24` is the maintained, patched line and also
+  avoids a Rust/WASM native bridge dependency the newer line pulls in.
+  Don't "helpfully" bump this to the highest-numbered version without
+  re-checking the advisory and dependency tree.
+- **Module loading**: `@whiskeysockets/baileys` is ESM-only
+  (`"type": "module"`) while the main process builds to CJS. `client.ts`
+  loads it via a **dynamic** `await import(...)` inside `connectWa()`,
+  never a static top-level import — a static import would get compiled to
+  a CJS `require()` by the bundler, which can fail against an ESM-only
+  package depending on the Node/Electron version's `require(esm)` support.
+  Dynamic `import()` works from CJS regardless of that.
+- **Session storage**: auth credentials persist at
+  `userData/whatsapp-session/` (Baileys' `useMultiFileAuthState`), separate
+  from the SQLite DB — not included in JSON export/import or Excel export,
+  and deleted on disconnect (`logoutWa()`). Treat it like a login session:
+  don't back it up, don't copy it between machines.
+- **No recurring/scheduled auto-send** — explicitly skipped per the user's
+  answer when this was discussed, given the app also has no background
+  process (see below), so "recurring" could only ever mean "check on
+  next launch," which the user chose to skip for now rather than build.
+- The delay range (10–30s) is currently hardcoded in
+  `AutoSendQueue.tsx`/`sendBatch` calls, not a Settings field. Worth
+  exposing as a Settings control if the user wants it configurable later.
+
 ## Product decisions worth knowing (so they don't get "fixed")
 
 - **No cross-currency conversion anywhere**, by design — KGS/USD/UZS are

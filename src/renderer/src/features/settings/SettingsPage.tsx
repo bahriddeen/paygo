@@ -14,6 +14,7 @@ import {
 } from '@/lib/api'
 import { CURRENCY_CODES } from '@/lib/format'
 import { defaultWaTemplate } from '@/lib/i18n'
+import { useWhatsAppConnection } from '@/lib/useWhatsApp'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -158,6 +159,47 @@ function BranchManager() {
   )
 }
 
+function WhatsAppConnection() {
+  const { t } = useTranslation()
+  const { status, qr, connect, logout } = useWhatsAppConnection()
+
+  if (status.connected) {
+    return (
+      <div className="flex items-center justify-between gap-4 rounded-md border border-border bg-muted/30 px-3 py-2">
+        <div>
+          <p className="text-sm font-medium">{t('settings.waConnected')}</p>
+          <p className="font-mono text-xs text-muted-foreground">{status.phone}</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={logout}>
+          {t('settings.waDisconnect')}
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3 rounded-md border border-border bg-muted/30 p-3">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium">{t('settings.waNotConnected')}</p>
+          <p className="text-xs text-muted-foreground">{t('settings.waConnectHint')}</p>
+        </div>
+        {!qr ? (
+          <Button size="sm" className="shrink-0" onClick={connect} disabled={status.connecting}>
+            {status.connecting ? t('settings.waConnecting') : t('settings.waConnect')}
+          </Button>
+        ) : null}
+      </div>
+      {qr ? (
+        <div className="flex flex-col items-center gap-2 py-2">
+          <img src={qr} alt="QR" className="size-48 rounded-md border border-border" />
+          <p className="text-center text-xs text-muted-foreground">{t('settings.waScanHint')}</p>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 function DeleteAccountSection() {
   const { t } = useTranslation()
   const reset = useResetAccount()
@@ -271,6 +313,11 @@ export default function SettingsPage() {
               {t('settings.whatsappEnabled')}
             </label>
             <p className="text-xs text-muted-foreground">{t('settings.whatsappEnabledHint')}</p>
+            {raw['whatsapp_enabled'] === '1' ? (
+              <div className="space-y-3 border-t border-border pt-4">
+                <WhatsAppConnection />
+              </div>
+            ) : null}
             {raw['whatsapp_enabled'] === '1' ? (
               <div className="space-y-3 border-t border-border pt-4">
                 {(['ru', 'ky', 'uz'] as const).map((lang) => (

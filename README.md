@@ -20,7 +20,9 @@ per-license via offline activation codes.
 - **Dashboard & statistics** — outstanding totals, overdue debts, today's
   payments, a debt-over-time chart, top debtors.
 - **Reminders** — an in-app reminder center, native OS notifications, and
-  one-tap WhatsApp click-to-chat messages (pre-filled, localized).
+  WhatsApp reminders (opt-in, off by default): one-tap click-to-chat for a
+  single debtor, or batch auto-send for "Remind All" once WhatsApp is
+  linked (see [INFO.md](INFO.md) for the ban-risk tradeoffs of auto-send).
 - **Import / export** — full-fidelity JSON backup (merge or replace on
   import), Excel debtor list export, and scheduled local backups.
 - **Trilingual UI** — Russian, Kyrgyz, Uzbek.
