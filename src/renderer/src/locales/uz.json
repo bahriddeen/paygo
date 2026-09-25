@@ -165,6 +165,11 @@
     "recoverInvalid": "Tiklash kodi noto'g'ri",
     "recoverBack": "Kirishga qaytish"
   },
+  "shortcuts": {
+    "title": "Tezkor tugmalar",
+    "toggleHelp": "Bu ro'yxatni ko'rsatish/yashirish",
+    "closeDialog": "Oynani yopish"
+  },
   "settings": {
     "appearance": "Ko'rinish",
     "security": "Xavfsizlik",

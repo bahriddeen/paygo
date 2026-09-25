@@ -165,6 +165,11 @@
     "recoverInvalid": "Калыбына келтирүү коду туура эмес",
     "recoverBack": "Кирүүгө кайтуу"
   },
+  "shortcuts": {
+    "title": "Ыкчам баскычтар",
+    "toggleHelp": "Бул тизмени көрсөтүү/жашыруу",
+    "closeDialog": "Терезени жабуу"
+  },
   "settings": {
     "appearance": "Көрүнүш",
     "security": "Коопсуздук",

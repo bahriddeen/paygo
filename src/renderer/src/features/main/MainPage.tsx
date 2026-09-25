@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Plus, ReceiptText, CircleCheck, ChevronRight, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -91,6 +91,16 @@ export default function MainPage() {
   const [txOpen, setTxOpen] = useState(false)
   const [payFor, setPayFor] = useState<TransactionWithBalance | null>(null)
   const ovCtrl = useListControls(overdue.data ?? [], (tx) => tx.client_name, 8)
+
+  // The global "New transaction" shortcut (Ctrl/Cmd+N) navigates here with
+  // ?new=1 from anywhere in the app; pick it up once and open the modal.
+  const [searchParams, setSearchParams] = useSearchParams()
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setTxOpen(true)
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   const s = dash.data
 

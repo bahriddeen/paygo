@@ -67,12 +67,7 @@ export function PersonForm({
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="c-phone">{t('clients.phone')}</Label>
-        <Input
-          id="c-phone"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="+998 90 123 45 67"
-        />
+        <Input id="c-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="c-desc">{t('clients.description')}</Label>

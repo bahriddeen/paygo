@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Plus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -9,7 +10,9 @@ import { CURRENCY_CODES, toMinor, type CurrencyCode } from '@/lib/format'
 import { sanitizeAmountInput } from '@/lib/amount'
 import { dateInputToUnix, todayInput } from '@/lib/date'
 import { useAppSettings } from '@/app/SettingsProvider'
-import type { Client, Direction, NewTransactionInput } from '@/lib/api'
+import { useCategories, useCreateClient } from '@/lib/api'
+import { PersonForm, type PersonFormValues } from '../people/PersonForm'
+import type { Client, ClientKind, Direction, NewTransactionInput } from '@/lib/api'
 
 const selectClass =
   'h-9 w-full appearance-none rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
@@ -39,14 +42,61 @@ export function TransactionForm({
   const [date, setDate] = useState(todayInput())
   const [due, setDue] = useState('')
   const [error, setError] = useState('')
+  const [addingPerson, setAddingPerson] = useState(false)
+
+  // New-person defaults to the kind implied by the current direction — a
+  // debt "lent" is naturally to a client, one "borrowed" from a supplier.
+  const personKind: ClientKind = direction === 'borrow' ? 'supplier' : 'client'
+  const categories = useCategories(branchId, personKind)
+  const createClient = useCreateClient()
+
+  function submitNewPerson(v: PersonFormValues): void {
+    createClient.mutate(
+      {
+        branch_id: branchId,
+        kind: personKind,
+        name: v.name,
+        phone: v.phone || null,
+        description: v.description || null,
+        trust_level: v.trust_level,
+        group_id: v.group_id
+      },
+      {
+        onSuccess: (c) => {
+          setClientId(String(c.id))
+          setAddingPerson(false)
+        }
+      }
+    )
+  }
+
+  if (addingPerson) {
+    return (
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold">
+          {personKind === 'supplier' ? t('suppliers.addSupplier') : t('clients.addClient')}
+        </h3>
+        <PersonForm
+          categories={categories.data ?? []}
+          onSubmit={submitNewPerson}
+          onCancel={() => setAddingPerson(false)}
+          pending={createClient.isPending}
+        />
+      </div>
+    )
+  }
 
   if (clients.length === 0) {
     return (
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">{t('tx.noClients')}</p>
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onCancel}>
             {t('common.cancel')}
+          </Button>
+          <Button onClick={() => setAddingPerson(true)}>
+            <Plus className="size-4" />
+            {personKind === 'supplier' ? t('suppliers.addSupplier') : t('clients.addClient')}
           </Button>
         </div>
       </div>
@@ -100,14 +150,28 @@ export function TransactionForm({
 
       <div className="space-y-1.5">
         <Label>{t('tx.client')}</Label>
-        <Combobox
-          items={clients.map((c) => ({ value: String(c.id), label: c.name }))}
-          value={clientId}
-          onChange={setClientId}
-          placeholder={t('tx.selectClient')}
-          searchPlaceholder={t('clients.searchPlaceholder')}
-          emptyText={t('clients.noResults')}
-        />
+        <div className="flex gap-2">
+          <div className="min-w-0 flex-1">
+            <Combobox
+              items={clients.map((c) => ({ value: String(c.id), label: c.name }))}
+              value={clientId}
+              onChange={setClientId}
+              placeholder={t('tx.selectClient')}
+              searchPlaceholder={t('clients.searchPlaceholder')}
+              emptyText={t('clients.noResults')}
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="shrink-0"
+            aria-label={personKind === 'supplier' ? t('suppliers.addSupplier') : t('clients.addClient')}
+            onClick={() => setAddingPerson(true)}
+          >
+            <Plus className="size-4" />
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-[1fr_7rem] gap-2">

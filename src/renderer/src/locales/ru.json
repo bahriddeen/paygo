@@ -165,6 +165,11 @@
     "recoverInvalid": "Неверный код восстановления",
     "recoverBack": "Назад ко входу"
   },
+  "shortcuts": {
+    "title": "Горячие клавиши",
+    "toggleHelp": "Показать/скрыть этот список",
+    "closeDialog": "Закрыть окно"
+  },
   "settings": {
     "appearance": "Оформление",
     "security": "Безопасность",
