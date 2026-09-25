@@ -1,5 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 import type { CurrencyCode } from '../../../shared/currency'
+import type { ClientKind } from './clients'
 import { startOfDaySec } from './dateUtil'
 
 export type Direction = 'lend' | 'borrow'
@@ -20,6 +21,7 @@ export interface Transaction {
 export interface TransactionWithBalance extends Transaction {
   client_name: string
   client_phone: string | null
+  client_kind: ClientKind
   paid: number
   remaining: number
 }
@@ -95,7 +97,7 @@ export function listTransactions(
     clauses.push(`${REMAINING_EXPR} > 0`)
   }
 
-  let sql = `SELECT t.*, c.name AS client_name, c.phone AS client_phone,
+  let sql = `SELECT t.*, c.name AS client_name, c.phone AS client_phone, c.kind AS client_kind,
       COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.transaction_id = t.id), 0) AS paid,
       ${REMAINING_EXPR} AS remaining
     FROM transactions t

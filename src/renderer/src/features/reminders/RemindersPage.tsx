@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { MessageCircle, Clock, CircleCheck, Search } from 'lucide-react'
 import { useBranch } from '@/app/BranchProvider'
 import { useAppSettings } from '@/app/SettingsProvider'
-import { useTransactions } from '@/lib/api'
+import { useTransactions, type ClientKind } from '@/lib/api'
 import { useWhatsAppConnection } from '@/lib/useWhatsApp'
 import { formatMoney, type CurrencyCode } from '@/lib/format'
 import { formatDate, daysBetween } from '@/lib/date'
@@ -21,6 +21,7 @@ interface DebtorGroup {
   client_id: number
   name: string
   phone: string | null
+  kind: ClientKind
   amounts: { currency: CurrencyCode; amount: number }[]
   maxDays: number
 }
@@ -51,7 +52,14 @@ export default function RemindersPage() {
     for (const tx of overdue.data ?? []) {
       let g = map.get(tx.client_id)
       if (!g) {
-        g = { client_id: tx.client_id, name: tx.client_name, phone: tx.client_phone, amounts: [], maxDays: 0 }
+        g = {
+          client_id: tx.client_id,
+          name: tx.client_name,
+          phone: tx.client_phone,
+          kind: tx.client_kind,
+          amounts: [],
+          maxDays: 0
+        }
         map.set(tx.client_id, g)
       }
       const found = g.amounts.find((a) => a.currency === tx.currency)
@@ -135,7 +143,11 @@ export default function RemindersPage() {
             <>
               <ul className="divide-y divide-border">
                 {ctrl.pageItems.map((g) => (
-                  <li key={g.client_id} className="flex items-center gap-4 px-5 py-3">
+                  <li
+                    key={g.client_id}
+                    onClick={() => navigate(`/${g.kind === 'supplier' ? 'suppliers' : 'clients'}/${g.client_id}`)}
+                    className="flex cursor-pointer items-center gap-4 px-5 py-3 hover:bg-accent/50"
+                  >
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{g.name}</p>
                       <p className="truncate text-xs text-muted-foreground">
@@ -149,7 +161,15 @@ export default function RemindersPage() {
                       {amountsStr(g)}
                     </span>
                     {waEnabled ? (
-                      <Button variant="outline" size="sm" disabled={!g.phone} onClick={() => remind(g)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!g.phone}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          remind(g)
+                        }}
+                      >
                         <MessageCircle className="size-4" />
                         {t('reminders.whatsapp')}
                       </Button>

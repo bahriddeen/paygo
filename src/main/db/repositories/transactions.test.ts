@@ -66,6 +66,13 @@ describe('transactions', () => {
     expect(row.client_phone).toBe('+998901112233')
   })
 
+  test('listTransactions includes client_kind, so callers can route to the right profile page', () => {
+    const supplier = createClient(db, { branch_id: 1, name: 'Nur Savdo', kind: 'supplier' }).id
+    createTransaction(db, { branch_id: 1, client_id: supplier, direction: 'borrow', amount: 1000, currency: 'UZS' })
+    const [row] = listTransactions(db, 1, { clientId: supplier })
+    expect(row.client_kind).toBe('supplier')
+  })
+
   test('updateTransaction changes provided fields', () => {
     const t = lend(100000, 'UZS')
     const u = updateTransaction(db, t.id, { amount: 120000, description: 'rice' })

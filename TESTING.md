@@ -134,6 +134,11 @@ Same checks as Clients, plus:
 
 - [ ] Reminder center groups overdue vs. due-soon debts, sourced only
       from lend-direction debts.
+- [ ] Clicking anywhere on an overdue debtor row (not the WhatsApp button)
+      navigates to that person's profile page — `/clients/:id` normally,
+      but `/suppliers/:id` for the rare case of a `lend` transaction
+      against a supplier. Clicking the WhatsApp button itself must not
+      also trigger this navigation.
 - [ ] With WhatsApp reminders disabled in Settings, no "Remind All" or
       per-row WhatsApp buttons appear anywhere on the Reminders page.
 - [ ] With it enabled but **not connected**, clicking "Remind All" shows
