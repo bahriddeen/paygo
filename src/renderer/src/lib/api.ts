@@ -12,6 +12,7 @@ import type {
   Direction,
   Payment,
   PaymentWithClient,
+  PaymentWithTransaction,
   DashboardSummary,
   DirectionBalance,
   NewTransactionInput,
@@ -22,7 +23,9 @@ import type {
   WaStatus,
   BatchItem,
   BatchProgress,
-  BatchDone
+  BatchDone,
+  LineItem,
+  LineItemInput
 } from '../../../preload'
 import type { CurrencyCode } from './format'
 
@@ -39,6 +42,7 @@ export type {
   Direction,
   Payment,
   PaymentWithClient,
+  PaymentWithTransaction,
   DashboardSummary,
   DirectionBalance,
   NewTransactionInput,
@@ -48,7 +52,9 @@ export type {
   WaStatus,
   BatchItem,
   BatchProgress,
-  BatchDone
+  BatchDone,
+  LineItem,
+  LineItemInput
 }
 
 export function useBranches() {
@@ -151,7 +157,16 @@ export function useDemoStatus() {
 }
 
 export function useClearDemoData() {
-  return useMutation({ mutationFn: () => window.api.demo.clear() })
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => window.api.demo.clear(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['demo-status'] })
+      qc.invalidateQueries({ queryKey: ['clients'] })
+      qc.invalidateQueries({ queryKey: ['branches'] })
+      invalidateLedger(qc)
+    }
+  })
 }
 
 export function useResetAccount() {
@@ -230,6 +245,30 @@ export function useBranchPayments(query?: { branchId: number; from: number; to: 
   })
 }
 
+export function useClientPayments(clientId?: number) {
+  return useQuery({
+    queryKey: ['payments', 'by-client', clientId ?? null],
+    queryFn: () => window.api.payments.byClient(clientId!),
+    enabled: !!clientId
+  })
+}
+
+export function useTransactionPayments(transactionId?: number) {
+  return useQuery({
+    queryKey: ['payments', 'by-transaction', transactionId ?? null],
+    queryFn: () => window.api.payments.list(transactionId!),
+    enabled: !!transactionId
+  })
+}
+
+export function useTransactionLineItems(transactionId?: number) {
+  return useQuery({
+    queryKey: ['line-items', transactionId ?? null],
+    queryFn: () => window.api.transactions.lineItems.list(transactionId!),
+    enabled: !!transactionId
+  })
+}
+
 // Invalidate everything a new debt or payment can change.
 function invalidateLedger(qc: ReturnType<typeof useQueryClient>): void {
   qc.invalidateQueries({ queryKey: ['transactions'] })
@@ -260,6 +299,7 @@ export interface TransactionPatchInput {
   description?: string | null
   issued_at?: number
   due_at?: number | null
+  line_items?: LineItemInput[] | null
 }
 
 export function useUpdateTransaction() {

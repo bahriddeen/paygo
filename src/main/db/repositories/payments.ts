@@ -57,6 +57,34 @@ export function listPayments(db: DatabaseSync, transactionId: number): Payment[]
     .all(transactionId) as unknown as Payment[]
 }
 
+export interface PaymentWithTransaction {
+  id: number
+  transaction_id: number
+  direction: 'lend' | 'borrow'
+  description: string | null
+  amount: number
+  currency: CurrencyCode
+  method: string | null
+  note: string | null
+  paid_at: number
+}
+
+/** Full payment history for one person (client or supplier), across all of
+ *  their transactions regardless of direction — unlike listBranchPayments,
+ *  which is scoped to "money received" and so filters to lend-only. */
+export function listPaymentsByClient(db: DatabaseSync, clientId: number): PaymentWithTransaction[] {
+  return db
+    .prepare(
+      `SELECT p.id, p.transaction_id, t.direction AS direction, t.description AS description,
+        p.amount, p.currency, p.method, p.note, p.paid_at
+       FROM payments p
+       JOIN transactions t ON t.id = p.transaction_id
+       WHERE t.client_id = ?
+       ORDER BY p.paid_at DESC, p.id DESC`
+    )
+    .all(clientId) as unknown as PaymentWithTransaction[]
+}
+
 export interface PaymentWithClient {
   id: number
   transaction_id: number

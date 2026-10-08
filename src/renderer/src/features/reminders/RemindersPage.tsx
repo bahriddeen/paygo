@@ -1,13 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { MessageCircle, Clock, CircleCheck, Search } from 'lucide-react'
 import { useBranch } from '@/app/BranchProvider'
 import { useAppSettings } from '@/app/SettingsProvider'
-import { useTransactions, type ClientKind } from '@/lib/api'
+import { useTransactions } from '@/lib/api'
 import { useWhatsAppConnection } from '@/lib/useWhatsApp'
-import { formatMoney, type CurrencyCode } from '@/lib/format'
-import { formatDate, daysBetween } from '@/lib/date'
+import { formatMoney } from '@/lib/format'
+import { formatDate } from '@/lib/date'
 import { useListControls } from '@/lib/useListControls'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,19 +16,7 @@ import { Pager } from '@/components/ui/pager'
 import { EmptyState } from '@/components/EmptyState'
 import { ReminderQueue, type QueueDebtor } from './ReminderQueue'
 import { AutoSendQueue } from './AutoSendQueue'
-
-interface DebtorGroup {
-  client_id: number
-  name: string
-  phone: string | null
-  kind: ClientKind
-  amounts: { currency: CurrencyCode; amount: number }[]
-  maxDays: number
-}
-
-function fillTemplate(tmpl: string, vars: Record<string, string>): string {
-  return tmpl.replace(/\{\{(\w+)\}\}/g, (_m, key) => vars[key] ?? '')
-}
+import { useDebtorGroups, amountsStr as amountsStrOf, type DebtorGroup } from './useDebtorGroups'
 
 export default function RemindersPage() {
   const { t, i18n } = useTranslation()
@@ -37,7 +25,7 @@ export default function RemindersPage() {
   const { raw: settings } = useAppSettings()
   const { status: waStatus } = useWhatsAppConnection()
   const branchId = activeBranchId ?? undefined
-  const overdue = useTransactions(branchId ? { branchId, overdue: true } : undefined)
+  const { groups, buildMessage: buildMessageFor } = useDebtorGroups(activeBranchId)
   const upcoming = useTransactions(branchId ? { branchId, dueSoonWithin: 7 * 86400 } : undefined)
   // A "remind all" click always builds a pending list first; where it goes
   // next depends on whether WhatsApp is linked (auto-send) or not (prompt to
@@ -46,40 +34,11 @@ export default function RemindersPage() {
   const [autoQueue, setAutoQueue] = useState<QueueDebtor[] | null>(null)
   const [manualQueue, setManualQueue] = useState<QueueDebtor[] | null>(null)
 
-  const groups = useMemo<DebtorGroup[]>(() => {
-    const now = Math.floor(Date.now() / 1000)
-    const map = new Map<number, DebtorGroup>()
-    for (const tx of overdue.data ?? []) {
-      let g = map.get(tx.client_id)
-      if (!g) {
-        g = {
-          client_id: tx.client_id,
-          name: tx.client_name,
-          phone: tx.client_phone,
-          kind: tx.client_kind,
-          amounts: [],
-          maxDays: 0
-        }
-        map.set(tx.client_id, g)
-      }
-      const found = g.amounts.find((a) => a.currency === tx.currency)
-      if (found) found.amount += tx.remaining
-      else g.amounts.push({ currency: tx.currency, amount: tx.remaining })
-      if (tx.due_at) g.maxDays = Math.max(g.maxDays, daysBetween(tx.due_at, now))
-    }
-    return [...map.values()]
-  }, [overdue.data])
-
   const ctrl = useListControls(groups, (g) => g.name, 12)
 
-  const amountsStr = (g: DebtorGroup): string =>
-    g.amounts.map((a) => formatMoney(a.amount, a.currency)).join(', ')
+  const amountsStr = (g: DebtorGroup): string => amountsStrOf(g, formatMoney)
 
-  const buildMessage = (g: DebtorGroup): string => {
-    const vars = { name: g.name, amount: amountsStr(g), days: String(g.maxDays) }
-    const stored = settings[`wa_template_${i18n.language}`]
-    return stored ? fillTemplate(stored, vars) : t('reminders.waTemplate', vars)
-  }
+  const buildMessage = (g: DebtorGroup): string => buildMessageFor(g, formatMoney)
 
   const remind = (g: DebtorGroup): void => {
     if (g.phone) void window.api.whatsapp.open(g.phone, buildMessage(g))

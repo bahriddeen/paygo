@@ -32,6 +32,24 @@ describe('wipeDatabase', () => {
     expect(getSetting(db, 'activation_code_id')).toBeNull()
   })
 
+  test('does not violate the transaction_line_items foreign key when a transaction has line items', () => {
+    const db = createDatabase(':memory:')
+    const ali = createClient(db, { branch_id: 1, name: 'Ali' })
+    createTransaction(db, {
+      branch_id: 1,
+      client_id: ali.id,
+      direction: 'lend',
+      amount: 1,
+      currency: 'UZS',
+      line_items: [{ product: 'Bread', quantity: 2, unit_price: 1000 }]
+    })
+
+    expect(() => wipeDatabase(db)).not.toThrow()
+    expect(
+      (db.prepare('SELECT COUNT(*) AS n FROM transaction_line_items').get() as { n: number }).n
+    ).toBe(0)
+  })
+
   test('the same connection stays usable afterward (no close/reopen)', () => {
     const db = createDatabase(':memory:')
     wipeDatabase(db)

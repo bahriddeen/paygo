@@ -120,5 +120,9 @@ describe('clearDemoData', () => {
       .prepare('SELECT COUNT(*) AS n FROM transactions WHERE is_demo = 1')
       .get() as { n: number }
     expect(demoTxLeft.n).toBe(0)
+
+    // The client now has only real data left, so it must stop counting as
+    // "demo" — otherwise the "Start fresh" button stays visible forever.
+    expect(hasDemoData(db)).toBe(false)
   })
 })

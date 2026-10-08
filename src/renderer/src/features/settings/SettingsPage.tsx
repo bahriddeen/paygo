@@ -15,6 +15,7 @@ import {
 import { CURRENCY_CODES } from '@/lib/format'
 import { defaultWaTemplate } from '@/lib/i18n'
 import { useWhatsAppConnection } from '@/lib/useWhatsApp'
+import { formatDate } from '@/lib/date'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -217,6 +218,87 @@ function WhatsAppConnection() {
   )
 }
 
+function ScheduleReminderSettings({
+  raw,
+  setSetting
+}: {
+  raw: Record<string, string | null>
+  setSetting: ReturnType<typeof useSetSetting>
+}) {
+  const { t, i18n } = useTranslation()
+  const { status: waStatus } = useWhatsAppConnection()
+
+  if (!waStatus.connected) return null
+
+  const enabled = raw['reminder_schedule_enabled'] === '1'
+  const intervalDays = raw['reminder_schedule_interval_days'] || '4'
+  const time = raw['reminder_schedule_time'] || '09:00'
+  const lastSent = Number(raw['reminder_schedule_last_sent'] ?? '0')
+
+  return (
+    <div className="space-y-3 border-t border-border pt-4">
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={(e) => {
+            setSetting.mutate({
+              key: 'reminder_schedule_enabled',
+              value: e.target.checked ? '1' : '0'
+            })
+            // Clearing last_sent on disable means re-enabling is treated as a
+            // first-ever run (fires once today's time has passed) instead of
+            // waiting out the interval from whenever it was last turned on —
+            // this is also how a user forces a resend without a dedicated button.
+            if (!e.target.checked) {
+              setSetting.mutate({ key: 'reminder_schedule_last_sent', value: '0' })
+            }
+          }}
+          className="size-4 rounded border-input"
+        />
+        {t('settings.scheduleReminderEnabled')}
+      </label>
+      <p className="text-xs text-muted-foreground">{t('settings.scheduleReminderHint')}</p>
+      {enabled ? (
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="space-y-1.5">
+            <Label>{t('settings.scheduleIntervalLabel')}</Label>
+            <Input
+              type="number"
+              min={1}
+              max={30}
+              defaultValue={intervalDays}
+              className="w-24"
+              onBlur={(e) =>
+                setSetting.mutate({
+                  key: 'reminder_schedule_interval_days',
+                  value: String(Math.min(30, Math.max(1, Number(e.target.value) || 1)))
+                })
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t('settings.scheduleTimeLabel')}</Label>
+            <Input
+              type="time"
+              defaultValue={time}
+              className="w-32"
+              onBlur={(e) =>
+                setSetting.mutate({ key: 'reminder_schedule_time', value: e.target.value })
+              }
+            />
+          </div>
+          {lastSent ? (
+            <p className="text-xs text-muted-foreground">
+              {t('settings.scheduleLastSent', { date: formatDate(lastSent, i18n.language) })}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 function DeleteAccountSection() {
   const { t } = useTranslation()
   const reset = useResetAccount()
@@ -334,6 +416,9 @@ export default function SettingsPage() {
               <div className="space-y-3 border-t border-border pt-4">
                 <WhatsAppConnection />
               </div>
+            ) : null}
+            {raw['whatsapp_enabled'] === '1' ? (
+              <ScheduleReminderSettings raw={raw} setSetting={setSetting} />
             ) : null}
             {raw['whatsapp_enabled'] === '1' ? (
               <div className="space-y-3 border-t border-border pt-4">

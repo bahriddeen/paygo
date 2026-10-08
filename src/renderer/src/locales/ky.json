@@ -91,6 +91,7 @@
     "amount": "Сумма",
     "currency": "Валюта",
     "date": "Күнү",
+    "time": "Убактысы",
     "dueDate": "Кайтаруу мөөнөтү",
     "note": "Эскертүү",
     "recordPayment": "Төлөм киргизүү",
@@ -107,7 +108,20 @@
     "editTitle": "Амалды өзгөртүү",
     "deleteConfirm": "Амал өчүрүлсүнбү? Байланышкан төлөмдөр да өчүрүлөт.",
     "amountBelowPaid": "Сумма төлөнгөндөн аз",
-    "delete": "Өчүрүү"
+    "delete": "Өчүрүү",
+    "lineItems": {
+      "product": "Товар",
+      "quantity": "Саны",
+      "price": "Баасы",
+      "total": "Суммасы",
+      "addRow": "Сап кошуу",
+      "grandTotal": "Жалпы суммасы"
+    }
+  },
+  "history": {
+    "aria": "Тарых",
+    "title": "Төлөмдөр тарыхы",
+    "empty": "Азырынча төлөм жок"
   },
   "stats": {
     "owed": "Бизге карыз",
@@ -153,7 +167,9 @@
     "waNotConnectedTitle": "WhatsApp туташкан жок",
     "waNotConnectedBody": "Эскертүүлөрдү автоматтык жөнөтүү үчүн жөндөөлөрдөн WhatsApp'ты туташтырыңыз. Же болбосо, азыр кол менен жөнөтүңүз.",
     "sendManually": "Кол менен жөнөтүү",
-    "goConnect": "WhatsApp'ты туташтыруу"
+    "goConnect": "WhatsApp'ты туташтыруу",
+    "scheduledSendNotifyTitle": "Автоматтык эскертүүлөр жөнөтүлдү",
+    "scheduledSendNotifyBody": "{{ok}} жөнөтүлдү, {{fail}} жөнөтүлбөй калды."
   },
   "activation": {
     "title": "Активация",
@@ -223,6 +239,11 @@
     "waErrorGeneric": "Туташуу ишке ашкан жок. Сессияны тазалап, кайра аракет кылыңыз.",
     "waReset": "Тазалоо",
     "templateHint": "Жеткиликтүү: {{name}}, {{amount}}, {{days}}",
+    "scheduleReminderEnabled": "Эскертүүлөрдү график боюнча автоматтык жөнөтүү",
+    "scheduleReminderHint": "Жөнөтүү колдонмо кайра ачылганда, эскертүү мөөнөтү келген күн жана убакытта болот — так мүнөтүнө чейин фондо иштебейт.",
+    "scheduleIntervalLabel": "Аралык, күн",
+    "scheduleTimeLabel": "Убакыт",
+    "scheduleLastSent": "Акыркы жөнөтүү: {{date}}",
     "saved": "Сакталды",
     "branchDeleteError": "Өчүрүү мүмкүн эмес: филиал бош эмес же акыркысы",
     "dataBackup": "Маалымат жана резерв көчүрмө",

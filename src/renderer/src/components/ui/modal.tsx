@@ -2,16 +2,23 @@ import { useEffect, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { Button } from './button'
 
+const SIZE_CLASS = {
+  md: 'max-w-md',
+  lg: 'max-w-2xl'
+} as const
+
 export function Modal({
   open,
   onClose,
   title,
-  children
+  children,
+  size = 'md'
 }: {
   open: boolean
   onClose: () => void
   title: string
   children: ReactNode
+  size?: keyof typeof SIZE_CLASS
 }) {
   useEffect(() => {
     if (!open) return
@@ -33,7 +40,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="w-full max-w-md rounded-lg border border-border bg-card shadow-lg"
+        className={`w-full ${SIZE_CLASS[size]} rounded-lg border border-border bg-card shadow-lg transition-[max-width] duration-200`}
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-border px-5 py-3">

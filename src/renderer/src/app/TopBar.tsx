@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Moon, Sun, Lock, Store, ChevronDown, Info } from 'lucide-react'
+import { Moon, Sun, Lock, Store, ChevronDown, Info, Loader2, CircleCheck } from 'lucide-react'
 import { useTheme } from './ThemeProvider'
 import { useBranch } from './BranchProvider'
 import { useLock } from './LockGate'
+import { useScheduledReminderStatus } from './ScheduledReminderStatus'
+import { ScheduledReminderQueueModal } from './ScheduledReminderQueueModal'
 import { LANGUAGES, setLanguage, type LanguageCode } from '@/lib/i18n'
 import { useDemoStatus, useClearDemoData } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -25,6 +27,12 @@ export function TopBar() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const demoStatus = useDemoStatus()
   const clearDemo = useClearDemoData()
+  const { status: reminderBatch } = useScheduledReminderStatus()
+  const [reminderQueueOpen, setReminderQueueOpen] = useState(false)
+
+  useEffect(() => {
+    if (reminderBatch.phase === 'idle') setReminderQueueOpen(false)
+  }, [reminderBatch.phase])
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent): void {
@@ -83,6 +91,29 @@ export function TopBar() {
       </label>
 
       <div className="flex items-center gap-2">
+        {reminderBatch.phase === 'sending' ? (
+          <button
+            type="button"
+            onClick={() => setReminderQueueOpen(true)}
+            className="flex items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
+          >
+            <Loader2 className="size-3.5 animate-spin" />
+            {t('reminders.queueProgress', { current: reminderBatch.sent, total: reminderBatch.total })}
+          </button>
+        ) : reminderBatch.phase === 'done' ? (
+          <button
+            type="button"
+            onClick={() => setReminderQueueOpen(true)}
+            className="flex items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
+          >
+            <CircleCheck className="size-3.5 text-primary" />
+            {t('reminders.scheduledSendNotifyBody', {
+              ok: reminderBatch.sentOk,
+              fail: reminderBatch.sentFail
+            })}
+          </button>
+        ) : null}
+
         {demoStatus.data?.hasDemoData ? (
           <Button
             variant="destructive"
@@ -141,6 +172,10 @@ export function TopBar() {
           ))}
         </ul>
       </Modal>
+
+      {reminderQueueOpen ? (
+        <ScheduledReminderQueueModal onClose={() => setReminderQueueOpen(false)} />
+      ) : null}
     </header>
   )
 }

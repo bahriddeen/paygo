@@ -91,6 +91,7 @@
     "amount": "Сумма",
     "currency": "Валюта",
     "date": "Дата",
+    "time": "Время",
     "dueDate": "Срок возврата",
     "note": "Комментарий",
     "recordPayment": "Внести платёж",
@@ -107,7 +108,20 @@
     "editTitle": "Изменить операцию",
     "deleteConfirm": "Удалить операцию? Связанные платежи тоже будут удалены.",
     "amountBelowPaid": "Сумма меньше уже оплаченной",
-    "delete": "Удалить"
+    "delete": "Удалить",
+    "lineItems": {
+      "product": "Товар",
+      "quantity": "Кол-во",
+      "price": "Цена",
+      "total": "Сумма",
+      "addRow": "Добавить строку",
+      "grandTotal": "Итого"
+    }
+  },
+  "history": {
+    "aria": "История",
+    "title": "История платежей",
+    "empty": "Платежей пока нет"
   },
   "stats": {
     "owed": "Нам должны",
@@ -153,7 +167,9 @@
     "waNotConnectedTitle": "WhatsApp не подключён",
     "waNotConnectedBody": "Чтобы отправлять напоминания автоматически, подключите WhatsApp в настройках. Либо отправьте эти напоминания вручную сейчас.",
     "sendManually": "Отправить вручную",
-    "goConnect": "Подключить WhatsApp"
+    "goConnect": "Подключить WhatsApp",
+    "scheduledSendNotifyTitle": "Автонапоминания отправлены",
+    "scheduledSendNotifyBody": "Отправлено {{ok}}, не удалось {{fail}}."
   },
   "activation": {
     "title": "Активация",
@@ -223,6 +239,11 @@
     "waErrorGeneric": "Не удалось подключиться. Сбросьте сессию и попробуйте снова.",
     "waReset": "Сбросить",
     "templateHint": "Доступно: {{name}}, {{amount}}, {{days}}",
+    "scheduleReminderEnabled": "Автоматически отправлять напоминания по расписанию",
+    "scheduleReminderHint": "Отправка происходит при следующем открытии приложения в день и время, когда напоминание уже наступило — не в фоновом режиме с точностью до минуты.",
+    "scheduleIntervalLabel": "Интервал, дней",
+    "scheduleTimeLabel": "Время",
+    "scheduleLastSent": "Последняя отправка: {{date}}",
     "saved": "Сохранено",
     "branchDeleteError": "Нельзя удалить: филиал не пустой или последний",
     "dataBackup": "Данные и резервные копии",

@@ -87,6 +87,23 @@ const MIGRATIONS: string[] = [
   `
   ALTER TABLE clients ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0;
   ALTER TABLE transactions ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0;
+  `,
+
+  // v4 — optional line items (Product/Qty/Price/Total) attached to a
+  // transaction. When present, their totals' sum is the transaction's
+  // authoritative `amount` (see replaceLineItems in transactions.ts).
+  `
+  CREATE TABLE transaction_line_items (
+    id             INTEGER PRIMARY KEY,
+    transaction_id INTEGER NOT NULL REFERENCES transactions(id) ON DELETE RESTRICT,
+    position       INTEGER NOT NULL,
+    product        TEXT NOT NULL,
+    quantity       REAL NOT NULL CHECK (quantity > 0),
+    unit_price     INTEGER NOT NULL CHECK (unit_price > 0),
+    total          INTEGER NOT NULL CHECK (total > 0),
+    created_at     INTEGER NOT NULL DEFAULT (unixepoch())
+  );
+  CREATE INDEX idx_line_items_txn ON transaction_line_items(transaction_id, position);
   `
 ]
 

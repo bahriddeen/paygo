@@ -23,6 +23,12 @@ export const ClientPatchSchema = z.object({
 
 const Currency = z.enum(['KGS', 'USD', 'UZS'])
 
+export const LineItemSchema = z.object({
+  product: z.string().trim().min(1).max(200),
+  quantity: z.number().positive(),
+  unit_price: z.number().int().positive()
+})
+
 export const NewTransactionSchema = z.object({
   branch_id: z.number().int().positive(),
   client_id: z.number().int().positive(),
@@ -31,7 +37,8 @@ export const NewTransactionSchema = z.object({
   currency: Currency,
   description: z.string().max(2000).nullish().transform(toNull),
   issued_at: z.number().int().positive().optional(),
-  due_at: z.number().int().positive().nullish().transform(toNull)
+  due_at: z.number().int().positive().nullish().transform(toNull),
+  line_items: z.array(LineItemSchema).max(200).optional()
 })
 
 export const NewPaymentSchema = z.object({
@@ -83,3 +90,4 @@ export type NewClientInput = z.input<typeof NewClientSchema>
 export type ClientPatchInput = z.input<typeof ClientPatchSchema>
 export type NewTransactionInput = z.input<typeof NewTransactionSchema>
 export type NewPaymentInput = z.input<typeof NewPaymentSchema>
+export type LineItemInput = z.input<typeof LineItemSchema>

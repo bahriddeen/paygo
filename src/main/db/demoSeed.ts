@@ -116,7 +116,10 @@ export function seedDemoData(
  * Removes exactly the demo-tagged rows. A demo client that has since
  * accumulated real (non-demo) transactions is kept — deleting demo
  * transactions/payments first means only demo clients with nothing real
- * attached to them actually get removed.
+ * attached to them actually get removed. A kept demo client is promoted to
+ * a real one (is_demo = 0): it now only has real data left, so it must stop
+ * counting toward hasDemoData() or the "Start fresh" button would never go
+ * away.
  */
 export function clearDemoData(db: DatabaseSync): void {
   db.exec('BEGIN')
@@ -128,6 +131,7 @@ export function clearDemoData(db: DatabaseSync): void {
     db.exec(
       `DELETE FROM clients WHERE is_demo = 1 AND id NOT IN (SELECT DISTINCT client_id FROM transactions)`
     )
+    db.exec(`UPDATE clients SET is_demo = 0 WHERE is_demo = 1`)
     db.exec('COMMIT')
   } catch (err) {
     db.exec('ROLLBACK')

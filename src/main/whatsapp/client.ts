@@ -190,14 +190,28 @@ export async function logoutWa(): Promise<void> {
   listeners.status(getStatus())
 }
 
+let cancelSleep: (() => void) | null = null
+
 export function cancelBatch(): void {
   batchCancelled = true
+  cancelSleep?.() // wake the in-progress inter-message delay immediately instead of waiting it out
 }
 
 const randomDelayMs = (minSec: number, maxSec: number): number =>
   (minSec + Math.random() * Math.max(0, maxSec - minSec)) * 1000
 
-const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      cancelSleep = null
+      resolve()
+    }, ms)
+    cancelSleep = () => {
+      clearTimeout(timer)
+      cancelSleep = null
+      resolve()
+    }
+  })
 
 export async function sendBatch(
   items: BatchItem[],

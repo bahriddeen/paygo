@@ -40,9 +40,15 @@ import {
   listTransactions,
   getTransaction,
   updateTransaction,
-  deleteTransaction
+  deleteTransaction,
+  listLineItems
 } from '../db/repositories/transactions'
-import { addPayment, listPayments, listBranchPayments } from '../db/repositories/payments'
+import {
+  addPayment,
+  listPayments,
+  listBranchPayments,
+  listPaymentsByClient
+} from '../db/repositories/payments'
 import { dashboardSummary, clientBalance } from '../db/repositories/summary'
 import { debtSeries, topDebtors } from '../db/repositories/stats'
 import { isActivated, activate } from '../license'
@@ -53,6 +59,7 @@ import {
   ClientPatchSchema,
   NewTransactionSchema,
   NewPaymentSchema,
+  LineItemSchema,
   StatsSeriesSchema,
   TopDebtorsSchema,
   ActivateSchema,
@@ -107,7 +114,11 @@ const SETTING_KEYS = [
   'wa_template_uz',
   'backup_folder',
   'backup_schedule',
-  'backup_last'
+  'backup_last',
+  'reminder_schedule_enabled',
+  'reminder_schedule_interval_days',
+  'reminder_schedule_time',
+  'reminder_schedule_last_sent'
 ] as const
 const ExportSchema = z.object({ branchId: z.number().int().positive().optional() })
 const ImportSchema = z.object({ mode: z.enum(['merge', 'replace']) })
@@ -121,7 +132,8 @@ const TransactionUpdateSchema = z.object({
     currency: z.enum(['KGS', 'USD', 'UZS']).optional(),
     description: z.string().max(2000).nullable().optional(),
     issued_at: z.number().int().positive().optional(),
-    due_at: z.number().int().positive().nullable().optional()
+    due_at: z.number().int().positive().nullable().optional(),
+    line_items: z.array(LineItemSchema).max(200).nullable().optional()
   })
 })
 const BranchScopeSchema = z.object({ branchId: z.number().int().positive() })
@@ -320,6 +332,11 @@ export function registerIpc(): void {
     return { ok: true }
   })
 
+  ipcMain.handle('transactions:lineItems:list', (_e, raw) => {
+    const { transactionId } = TransactionIdSchema.parse(raw)
+    return listLineItems(getDb(), transactionId)
+  })
+
   ipcMain.handle('payments:list', (_e, raw) => {
     const { transactionId } = TransactionIdSchema.parse(raw)
     return listPayments(getDb(), transactionId)
@@ -328,6 +345,11 @@ export function registerIpc(): void {
   ipcMain.handle('payments:add', (_e, raw) => {
     const input = NewPaymentSchema.parse(raw)
     return addPayment(getDb(), input)
+  })
+
+  ipcMain.handle('payments:byClient', (_e, raw) => {
+    const { clientId } = ClientScopeSchema.parse(raw)
+    return listPaymentsByClient(getDb(), clientId)
   })
 
   ipcMain.handle('payments:byDate', (_e, raw) => {

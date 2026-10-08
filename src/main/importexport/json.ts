@@ -34,6 +34,14 @@ export interface BranchDump {
     note: string | null
     paid_at: number
   }[]
+  lineItems: {
+    transaction_id: number
+    position: number
+    product: string
+    quantity: number
+    unit_price: number
+    total: number
+  }[]
 }
 
 export interface DataDump {
@@ -60,6 +68,12 @@ function dumpBranch(db: DatabaseSync, branchId: number, name: string): BranchDum
     payments: all(
       `SELECT id, transaction_id, amount, currency, method, note, paid_at
        FROM payments WHERE branch_id = ?`
+    ),
+    lineItems: all(
+      `SELECT li.transaction_id, li.position, li.product, li.quantity, li.unit_price, li.total
+       FROM transaction_line_items li
+       JOIN transactions t ON t.id = li.transaction_id
+       WHERE t.branch_id = ?`
     )
   }
 }
@@ -140,9 +154,22 @@ function insertBranchDump(db: DatabaseSync, dump: BranchDump, targetBranchId: nu
        VALUES (?, ?, ?, ?, ?, ?, ?)`
     ).run(targetBranchId, mappedTxn, p.amount, p.currency, p.method, p.note, p.paid_at)
   }
+
+  for (const li of dump.lineItems ?? []) {
+    const mappedTxn = txnId.get(li.transaction_id)
+    if (mappedTxn == null) continue
+    db.prepare(
+      `INSERT INTO transaction_line_items (transaction_id, position, product, quantity, unit_price, total)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    ).run(mappedTxn, li.position, li.product, li.quantity, li.unit_price, li.total)
+  }
 }
 
 function wipeBranch(db: DatabaseSync, branchId: number): void {
+  db.prepare(
+    `DELETE FROM transaction_line_items
+     WHERE transaction_id IN (SELECT id FROM transactions WHERE branch_id = ?)`
+  ).run(branchId)
   db.prepare('DELETE FROM payments WHERE branch_id = ?').run(branchId)
   db.prepare('DELETE FROM transactions WHERE branch_id = ?').run(branchId)
   db.prepare('DELETE FROM clients WHERE branch_id = ?').run(branchId)

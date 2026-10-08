@@ -6,12 +6,13 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Combobox } from '@/components/ui/combobox'
 import { cn } from '@/lib/utils'
-import { CURRENCY_CODES, toMinor, type CurrencyCode } from '@/lib/format'
+import { CURRENCIES, CURRENCY_CODES, toMinor, type CurrencyCode } from '@/lib/format'
 import { sanitizeAmountInput } from '@/lib/amount'
-import { dateInputToUnix, todayInput } from '@/lib/date'
+import { dateInputToUnix, dateTimeInputToUnix, todayInput, nowTimeInput } from '@/lib/date'
 import { useAppSettings } from '@/app/SettingsProvider'
 import { useCategories, useCreateClient } from '@/lib/api'
 import { PersonForm, type PersonFormValues } from '../people/PersonForm'
+import { LineItemsTable, lineItemsGrandTotal, type LineItemRow } from './LineItemsTable'
 import type { Client, ClientKind, Direction, NewTransactionInput } from '@/lib/api'
 
 const selectClass =
@@ -23,7 +24,8 @@ export function TransactionForm({
   defaultDirection = 'lend',
   onSubmit,
   onCancel,
-  pending
+  pending,
+  onLineItemsChange
 }: {
   branchId: number
   clients: Client[]
@@ -31,6 +33,9 @@ export function TransactionForm({
   onSubmit: (input: NewTransactionInput) => void
   onCancel: () => void
   pending?: boolean
+  /** Fires whenever the line-items table goes from empty to non-empty or back —
+   * lets the enclosing Modal widen itself while the table is in use. */
+  onLineItemsChange?: (hasLineItems: boolean) => void
 }) {
   const { t } = useTranslation()
   const { defaultCurrency } = useAppSettings()
@@ -39,7 +44,13 @@ export function TransactionForm({
   const [amount, setAmount] = useState('')
   const [currency, setCurrency] = useState<CurrencyCode>(defaultCurrency)
   const [note, setNote] = useState('')
+  const [lineItems, setLineItemsState] = useState<LineItemRow[]>([])
+  function setLineItems(next: LineItemRow[]): void {
+    setLineItemsState(next)
+    onLineItemsChange?.(next.length > 0)
+  }
   const [date, setDate] = useState(todayInput())
+  const [time, setTime] = useState(nowTimeInput())
   const [due, setDue] = useState('')
   const [error, setError] = useState('')
   const [addingPerson, setAddingPerson] = useState(false)
@@ -103,10 +114,26 @@ export function TransactionForm({
     )
   }
 
+  const hasLineItems = lineItems.length > 0
+
   function handleSubmit(e: FormEvent): void {
     e.preventDefault()
-    const value = parseFloat(amount.replace(',', '.'))
-    if (!clientId || !Number.isFinite(value) || value <= 0) {
+    if (hasLineItems) {
+      const invalid = lineItems.some(
+        (row) =>
+          !row.product.trim() ||
+          !Number.isFinite(parseFloat(row.quantity.replace(',', '.'))) ||
+          !Number.isFinite(parseFloat(row.price.replace(',', '.')))
+      )
+      if (!clientId || invalid) {
+        setError(t('tx.amount'))
+        return
+      }
+    }
+    const minor = hasLineItems
+      ? lineItemsGrandTotal(lineItems, currency)
+      : toMinor(parseFloat(amount.replace(',', '.')), currency)
+    if (!clientId || !Number.isFinite(minor) || minor <= 0) {
       setError(t('tx.amount'))
       return
     }
@@ -114,11 +141,18 @@ export function TransactionForm({
       branch_id: branchId,
       client_id: Number(clientId),
       direction,
-      amount: toMinor(value, currency),
+      amount: minor,
       currency,
       description: note.trim() || null,
-      issued_at: dateInputToUnix(date),
-      due_at: due ? dateInputToUnix(due) : null
+      issued_at: dateTimeInputToUnix(date, time),
+      due_at: due ? dateInputToUnix(due) : null,
+      line_items: hasLineItems
+        ? lineItems.map((row) => ({
+            product: row.product.trim(),
+            quantity: parseFloat(row.quantity.replace(',', '.')),
+            unit_price: toMinor(parseFloat(row.price.replace(',', '.')), currency)
+          }))
+        : undefined
     })
   }
 
@@ -180,8 +214,14 @@ export function TransactionForm({
           <Input
             id="tx-amount"
             inputMode="decimal"
-            value={amount}
+            value={
+              hasLineItems
+                ? String(lineItemsGrandTotal(lineItems, currency) / 10 ** CURRENCIES[currency].decimals)
+                : amount
+            }
             onChange={(e) => setAmount(sanitizeAmountInput(e.target.value))}
+            readOnly={hasLineItems}
+            disabled={hasLineItems}
             autoFocus
           />
         </div>
@@ -203,21 +243,28 @@ export function TransactionForm({
       </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-[1fr_7rem] gap-2">
         <div className="space-y-1.5">
           <Label htmlFor="tx-date">{t('tx.date')}</Label>
           <Input id="tx-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="tx-due">{t('tx.dueDate')}</Label>
-          <Input id="tx-due" type="date" value={due} onChange={(e) => setDue(e.target.value)} />
+          <Label htmlFor="tx-time">{t('tx.time')}</Label>
+          <Input id="tx-time" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="tx-due">{t('tx.dueDate')}</Label>
+        <Input id="tx-due" type="date" value={due} onChange={(e) => setDue(e.target.value)} />
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="tx-note">{t('tx.note')}</Label>
         <Input id="tx-note" value={note} onChange={(e) => setNote(e.target.value)} />
       </div>
+
+      <LineItemsTable currency={currency} rows={lineItems} onChange={setLineItems} />
 
       <div className="flex justify-end gap-2 pt-1">
         <Button type="button" variant="outline" onClick={onCancel}>

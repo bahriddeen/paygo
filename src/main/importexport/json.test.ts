@@ -3,7 +3,7 @@ import { createDatabase } from '../db/createDatabase'
 import { createBranch } from '../db/repositories/branches'
 import { createClient, listClients } from '../db/repositories/clients'
 import { createCategory, listCategories } from '../db/repositories/categories'
-import { createTransaction, listTransactions } from '../db/repositories/transactions'
+import { createTransaction, listTransactions, listLineItems } from '../db/repositories/transactions'
 import { addPayment, listPayments } from '../db/repositories/payments'
 import { exportData, importData } from './json'
 
@@ -93,6 +93,42 @@ describe('exportData / importData preserve kind (client vs supplier)', () => {
 
     // The supplier must not have quietly become a client.
     expect(listClients(dest, 1, { kind: 'client' })).toHaveLength(0)
+  })
+})
+
+describe('exportData / importData preserve line items', () => {
+  test('line items survive a replace round trip, remapped to the new transaction id', () => {
+    const src = createDatabase(':memory:')
+    const client = createClient(src, { branch_id: 1, name: 'Ali' })
+    createTransaction(src, {
+      branch_id: 1,
+      client_id: client.id,
+      direction: 'lend',
+      amount: 1,
+      currency: 'UZS',
+      line_items: [{ product: 'Bread', quantity: 2, unit_price: 1000 }]
+    })
+    // A second, unrelated transaction so a naive import can't accidentally
+    // attach the first transaction's line items to the wrong imported row.
+    createTransaction(src, {
+      branch_id: 1,
+      client_id: client.id,
+      direction: 'lend',
+      amount: 500,
+      currency: 'UZS'
+    })
+    const dump = exportData(src, { branchId: 1 })
+    expect(dump.branches[0].lineItems).toHaveLength(1)
+
+    const dest = createDatabase(':memory:')
+    importData(dest, dump, { mode: 'replace' })
+
+    const imported = listTransactions(dest, 1)
+    const withItems = imported.find((tx) => tx.amount === 2000)
+    const withoutItems = imported.find((tx) => tx.amount === 500)
+    expect(listLineItems(dest, withItems!.id)).toHaveLength(1)
+    expect(listLineItems(dest, withItems!.id)[0].product).toBe('Bread')
+    expect(listLineItems(dest, withoutItems!.id)).toHaveLength(0)
   })
 })
 

@@ -89,6 +89,7 @@ export default function MainPage() {
   const addPay = useAddPayment()
 
   const [txOpen, setTxOpen] = useState(false)
+  const [txWide, setTxWide] = useState(false)
   const [payFor, setPayFor] = useState<TransactionWithBalance | null>(null)
   const ovCtrl = useListControls(overdue.data ?? [], (tx) => tx.client_name, 8)
 
@@ -227,14 +228,33 @@ export default function MainPage() {
         </div>
       </section>
 
-      <Modal open={txOpen} onClose={() => setTxOpen(false)} title={t('common.newTransaction')}>
+      <Modal
+        open={txOpen}
+        onClose={() => {
+          setTxOpen(false)
+          setTxWide(false)
+        }}
+        title={t('common.newTransaction')}
+        size={txWide ? 'lg' : 'md'}
+      >
         {branchId ? (
           <TransactionForm
             branchId={branchId}
             clients={clientsQ.data ?? []}
             pending={createTx.isPending}
-            onCancel={() => setTxOpen(false)}
-            onSubmit={(input) => createTx.mutate(input, { onSuccess: () => setTxOpen(false) })}
+            onLineItemsChange={setTxWide}
+            onCancel={() => {
+              setTxOpen(false)
+              setTxWide(false)
+            }}
+            onSubmit={(input) =>
+              createTx.mutate(input, {
+                onSuccess: () => {
+                  setTxOpen(false)
+                  setTxWide(false)
+                }
+              })
+            }
           />
         ) : null}
       </Modal>

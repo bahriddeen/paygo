@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2, History } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { formatMoney } from '@/lib/format'
@@ -11,6 +11,7 @@ export function TransactionRow({
   onPay,
   onEdit,
   onDelete,
+  onHistory,
   showOverdue,
   locale
 }: {
@@ -18,6 +19,7 @@ export function TransactionRow({
   onPay: (tx: TransactionWithBalance) => void
   onEdit?: (tx: TransactionWithBalance) => void
   onDelete?: (tx: TransactionWithBalance) => void
+  onHistory?: (tx: TransactionWithBalance) => void
   showOverdue?: boolean
   locale: string
 }) {
@@ -27,7 +29,13 @@ export function TransactionRow({
   const overdueDays = tx.due_at ? daysBetween(tx.due_at, nowSec) : 0
 
   return (
-    <li className="group flex items-center gap-4 px-5 py-3">
+    <li
+      className={cn(
+        'group flex items-center gap-4 px-5 py-3',
+        onHistory ? 'cursor-pointer hover:bg-accent/50' : ''
+      )}
+      onClick={onHistory ? () => onHistory(tx) : undefined}
+    >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span
@@ -62,10 +70,23 @@ export function TransactionRow({
           <p className="text-xs text-primary">{t('tx.settled')}</p>
         )}
       </div>
-      <div className="flex shrink-0 items-center gap-1 opacity-0 transition group-hover:opacity-100">
+      <div
+        className="flex shrink-0 items-center gap-1 opacity-0 transition group-hover:opacity-100"
+        onClick={(e) => e.stopPropagation()}
+      >
         {isOpen ? (
           <Button variant="outline" size="sm" onClick={() => onPay(tx)}>
             {t('tx.recordPayment')}
+          </Button>
+        ) : null}
+        {onHistory ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t('history.aria')}
+            onClick={() => onHistory(tx)}
+          >
+            <History className="size-4" />
           </Button>
         ) : null}
         {onEdit ? (

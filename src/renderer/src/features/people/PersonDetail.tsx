@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Phone, MessageCircle, Pencil, Trash2, Plus, Check } from 'lucide-react'
+import { Phone, Pencil, Trash2, Plus, Check, History } from 'lucide-react'
 import {
   useClientBalance,
   useTransactions,
@@ -8,6 +8,9 @@ import {
   useAddPayment,
   useUpdateTransaction,
   useDeleteTransaction,
+  useClientPayments,
+  useTransactionPayments,
+  useTransactionLineItems,
   type Client,
   type ClientKind,
   type TransactionWithBalance
@@ -21,6 +24,8 @@ import { TransactionForm } from '../transactions/TransactionForm'
 import { TransactionEditForm } from '../transactions/TransactionEditForm'
 import { PaymentForm } from '../transactions/PaymentForm'
 import { TransactionRow } from '../transactions/TransactionRow'
+import { PaymentHistoryList } from '../transactions/PaymentHistoryList'
+import { TransactionSummary } from '../transactions/TransactionSummary'
 
 export function PersonDetail({
   client,
@@ -44,10 +49,17 @@ export function PersonDetail({
   const deleteTx = useDeleteTransaction()
 
   const [addOpen, setAddOpen] = useState(false)
+  const [addWide, setAddWide] = useState(false)
+  const [editWide, setEditWide] = useState(false)
   const [payTarget, setPayTarget] = useState<TransactionWithBalance | null>(null)
   const [payPicker, setPayPicker] = useState(false)
   const [editTarget, setEditTarget] = useState<TransactionWithBalance | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<TransactionWithBalance | null>(null)
+  const [historyTarget, setHistoryTarget] = useState<TransactionWithBalance | null>(null)
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const clientHistory = useClientPayments(historyOpen ? client.id : undefined)
+  const txHistory = useTransactionPayments(historyTarget?.id)
+  const txHistoryLineItems = useTransactionLineItems(historyTarget?.id)
 
   const lend = (balance.data ?? []).filter((b) => b.direction === 'lend')
   const borrow = (balance.data ?? []).filter((b) => b.direction === 'borrow')
@@ -73,26 +85,14 @@ export function PersonDetail({
           ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          {client.phone ? (
-            <>
-              <Button
-                variant="outline"
-                size="icon"
-                aria-label={t('clients.call')}
-                onClick={() => window.open(`tel:${client.phone}`)}
-              >
-                <Phone className="size-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                aria-label="WhatsApp"
-                onClick={() => client.phone && window.api.whatsapp.open(client.phone, '')}
-              >
-                <MessageCircle className="size-4" />
-              </Button>
-            </>
-          ) : null}
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={t('history.aria')}
+            onClick={() => setHistoryOpen(true)}
+          >
+            <History className="size-4" />
+          </Button>
           <Button variant="outline" size="icon" aria-label={t('common.edit')} onClick={onEdit}>
             <Pencil className="size-4" />
           </Button>
@@ -171,6 +171,7 @@ export function PersonDetail({
                   onPay={setPayTarget}
                   onEdit={setEditTarget}
                   onDelete={setDeleteTarget}
+                  onHistory={setHistoryTarget}
                 />
               ))}
             </ul>
@@ -182,14 +183,33 @@ export function PersonDetail({
         </div>
       </div>
 
-      <Modal open={addOpen} onClose={() => setAddOpen(false)} title={t('common.newTransaction')}>
+      <Modal
+        open={addOpen}
+        onClose={() => {
+          setAddOpen(false)
+          setAddWide(false)
+        }}
+        title={t('common.newTransaction')}
+        size={addWide ? 'lg' : 'md'}
+      >
         <TransactionForm
           branchId={branchId}
           clients={[client]}
           defaultDirection={kind === 'supplier' ? 'borrow' : 'lend'}
           pending={createTx.isPending}
-          onCancel={() => setAddOpen(false)}
-          onSubmit={(input) => createTx.mutate(input, { onSuccess: () => setAddOpen(false) })}
+          onLineItemsChange={setAddWide}
+          onCancel={() => {
+            setAddOpen(false)
+            setAddWide(false)
+          }}
+          onSubmit={(input) =>
+            createTx.mutate(input, {
+              onSuccess: () => {
+                setAddOpen(false)
+                setAddWide(false)
+              }
+            })
+          }
         />
       </Modal>
 
@@ -225,16 +245,54 @@ export function PersonDetail({
         ) : null}
       </Modal>
 
-      <Modal open={editTarget !== null} onClose={() => setEditTarget(null)} title={t('tx.editTitle')}>
+      <Modal
+        open={editTarget !== null}
+        onClose={() => {
+          setEditTarget(null)
+          setEditWide(false)
+        }}
+        title={t('tx.editTitle')}
+        size={editWide ? 'lg' : 'md'}
+      >
         {editTarget ? (
           <TransactionEditForm
             transaction={editTarget}
             pending={updateTx.isPending}
-            onCancel={() => setEditTarget(null)}
+            onLineItemsChange={setEditWide}
+            onCancel={() => {
+              setEditTarget(null)
+              setEditWide(false)
+            }}
             onSubmit={(patch) =>
-              updateTx.mutate({ id: editTarget.id, patch }, { onSuccess: () => setEditTarget(null) })
+              updateTx.mutate(
+                { id: editTarget.id, patch },
+                {
+                  onSuccess: () => {
+                    setEditTarget(null)
+                    setEditWide(false)
+                  }
+                }
+              )
             }
           />
+        ) : null}
+      </Modal>
+
+      <Modal open={historyOpen} onClose={() => setHistoryOpen(false)} title={t('history.title')}>
+        <PaymentHistoryList payments={clientHistory.data ?? []} />
+      </Modal>
+
+      <Modal
+        open={historyTarget !== null}
+        onClose={() => setHistoryTarget(null)}
+        title={t('history.title')}
+        size="lg"
+      >
+        {historyTarget ? (
+          <div className="space-y-3">
+            <TransactionSummary tx={historyTarget} lineItems={txHistoryLineItems.data ?? []} />
+            <PaymentHistoryList payments={txHistory.data ?? []} />
+          </div>
         ) : null}
       </Modal>
 

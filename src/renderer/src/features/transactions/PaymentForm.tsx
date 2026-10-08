@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { formatMoney, toMinor } from '@/lib/format'
 import { sanitizeAmountInput } from '@/lib/amount'
-import { dateInputToUnix, todayInput } from '@/lib/date'
+import { dateTimeInputToUnix, todayInput, nowTimeInput } from '@/lib/date'
 import type { NewPaymentInput, TransactionWithBalance } from '@/lib/api'
 
 const selectClass =
@@ -26,6 +26,7 @@ export function PaymentForm({
   const [amount, setAmount] = useState('')
   const [method, setMethod] = useState('cash')
   const [date, setDate] = useState(todayInput())
+  const [time, setTime] = useState(nowTimeInput())
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
 
@@ -46,7 +47,7 @@ export function PaymentForm({
       amount: minor,
       method,
       note: note.trim() || null,
-      paid_at: dateInputToUnix(date)
+      paid_at: dateTimeInputToUnix(date, time)
     })
   }
 
@@ -71,23 +72,28 @@ export function PaymentForm({
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="pay-method">{t('tx.method')}</Label>
-          <select
-            id="pay-method"
-            value={method}
-            onChange={(e) => setMethod(e.target.value)}
-            className={selectClass}
-          >
-            <option value="cash">{t('tx.methodCash')}</option>
-            <option value="card">{t('tx.methodCard')}</option>
-            <option value="transfer">{t('tx.methodTransfer')}</option>
-          </select>
-        </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="pay-method">{t('tx.method')}</Label>
+        <select
+          id="pay-method"
+          value={method}
+          onChange={(e) => setMethod(e.target.value)}
+          className={selectClass}
+        >
+          <option value="cash">{t('tx.methodCash')}</option>
+          <option value="card">{t('tx.methodCard')}</option>
+          <option value="transfer">{t('tx.methodTransfer')}</option>
+        </select>
+      </div>
+
+      <div className="grid grid-cols-[1fr_7rem] gap-2">
         <div className="space-y-1.5">
           <Label htmlFor="pay-date">{t('tx.date')}</Label>
           <Input id="pay-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="pay-time">{t('tx.time')}</Label>
+          <Input id="pay-time" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
         </div>
       </div>
 

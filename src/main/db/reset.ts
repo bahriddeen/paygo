@@ -15,6 +15,7 @@ export function wipeDatabase(db: DatabaseSync): void {
   db.exec('BEGIN')
   try {
     db.exec('DELETE FROM payments')
+    db.exec('DELETE FROM transaction_line_items')
     db.exec('DELETE FROM transactions')
     db.exec('DELETE FROM clients')
     db.exec('DELETE FROM client_groups')

@@ -91,6 +91,7 @@
     "amount": "Summa",
     "currency": "Valyuta",
     "date": "Sana",
+    "time": "Vaqt",
     "dueDate": "Qaytarish muddati",
     "note": "Izoh",
     "recordPayment": "To'lov kiritish",
@@ -107,7 +108,20 @@
     "editTitle": "Amalni tahrirlash",
     "deleteConfirm": "Amal o'chirilsinmi? Bog'liq to'lovlar ham o'chiriladi.",
     "amountBelowPaid": "Summa to'langanidan kam",
-    "delete": "O'chirish"
+    "delete": "O'chirish",
+    "lineItems": {
+      "product": "Mahsulot",
+      "quantity": "Soni",
+      "price": "Narxi",
+      "total": "Summasi",
+      "addRow": "Qator qo'shish",
+      "grandTotal": "Jami summa"
+    }
+  },
+  "history": {
+    "aria": "Tarix",
+    "title": "To'lovlar tarixi",
+    "empty": "Hozircha to'lovlar yo'q"
   },
   "stats": {
     "owed": "Bizga qarzdor",
@@ -153,7 +167,9 @@
     "waNotConnectedTitle": "WhatsApp ulanmagan",
     "waNotConnectedBody": "Eslatmalarni avtomatik yuborish uchun sozlamalarda WhatsApp'ni ulang. Yoki hozir qo'lda yuboring.",
     "sendManually": "Qo'lda yuborish",
-    "goConnect": "WhatsApp'ni ulash"
+    "goConnect": "WhatsApp'ni ulash",
+    "scheduledSendNotifyTitle": "Avtomatik eslatmalar yuborildi",
+    "scheduledSendNotifyBody": "{{ok}} yuborildi, {{fail}} yuborilmadi."
   },
   "activation": {
     "title": "Aktivatsiya",
@@ -223,6 +239,11 @@
     "waErrorGeneric": "Ulanib bo'lmadi. Sessiyani tozalab, qayta urinib ko'ring.",
     "waReset": "Tozalash",
     "templateHint": "Mavjud: {{name}}, {{amount}}, {{days}}",
+    "scheduleReminderEnabled": "Eslatmalarni jadval bo'yicha avtomatik yuborish",
+    "scheduleReminderHint": "Yuborish ilova keyingi marta ochilganda, eslatma muddati yetgan kun va vaqtda amalga oshadi — aniq daqiqasida fonda ishlamaydi.",
+    "scheduleIntervalLabel": "Interval, kun",
+    "scheduleTimeLabel": "Vaqt",
+    "scheduleLastSent": "Oxirgi yuborilgan: {{date}}",
     "saved": "Saqlandi",
     "branchDeleteError": "O'chirib bo'lmaydi: filialda mijozlar bor yoki oxirgisi",
     "dataBackup": "Ma'lumot va zaxira nusxa",

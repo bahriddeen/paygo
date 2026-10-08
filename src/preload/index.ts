@@ -2,8 +2,12 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type { Branch } from '../main/db/repositories/branches'
 import type { Category } from '../main/db/repositories/categories'
 import type { Client, ClientSort, ClientKind } from '../main/db/repositories/clients'
-import type { Transaction, TransactionWithBalance } from '../main/db/repositories/transactions'
-import type { Payment, PaymentWithClient } from '../main/db/repositories/payments'
+import type {
+  Transaction,
+  TransactionWithBalance,
+  LineItem
+} from '../main/db/repositories/transactions'
+import type { Payment, PaymentWithClient, PaymentWithTransaction } from '../main/db/repositories/payments'
 import type { DashboardSummary, DirectionBalance } from '../main/db/repositories/summary'
 import type { DebtSeriesPoint, TopDebtor } from '../main/db/repositories/stats'
 import type { CurrencyCode } from '../shared/currency'
@@ -11,7 +15,8 @@ import type {
   NewClientInput,
   ClientPatchInput,
   NewTransactionInput,
-  NewPaymentInput
+  NewPaymentInput,
+  LineItemInput
 } from '../main/ipc/schemas'
 import type { WaStatus, BatchItem, BatchProgress, BatchDone } from '../main/whatsapp/client'
 
@@ -100,15 +105,22 @@ const api = {
         description?: string | null
         issued_at?: number
         due_at?: number | null
+        line_items?: LineItemInput[] | null
       }
     ): Promise<Transaction> => ipcRenderer.invoke('transactions:update', { id, patch }),
     delete: (id: number): Promise<{ ok: boolean }> =>
-      ipcRenderer.invoke('transactions:delete', { id })
+      ipcRenderer.invoke('transactions:delete', { id }),
+    lineItems: {
+      list: (transactionId: number): Promise<LineItem[]> =>
+        ipcRenderer.invoke('transactions:lineItems:list', { transactionId })
+    }
   },
   payments: {
     list: (transactionId: number): Promise<Payment[]> =>
       ipcRenderer.invoke('payments:list', { transactionId }),
     add: (input: NewPaymentInput): Promise<Payment> => ipcRenderer.invoke('payments:add', input),
+    byClient: (clientId: number): Promise<PaymentWithTransaction[]> =>
+      ipcRenderer.invoke('payments:byClient', { clientId }),
     byDate: (branchId: number, from: number, to: number): Promise<PaymentWithClient[]> =>
       ipcRenderer.invoke('payments:byDate', { branchId, from, to })
   },
@@ -198,14 +210,20 @@ export type AppApi = typeof api
 export type { Branch } from '../main/db/repositories/branches'
 export type { Category } from '../main/db/repositories/categories'
 export type { Client, ClientSort, ClientKind } from '../main/db/repositories/clients'
-export type { Transaction, TransactionWithBalance, Direction } from '../main/db/repositories/transactions'
-export type { Payment, PaymentWithClient } from '../main/db/repositories/payments'
+export type {
+  Transaction,
+  TransactionWithBalance,
+  Direction,
+  LineItem
+} from '../main/db/repositories/transactions'
+export type { Payment, PaymentWithClient, PaymentWithTransaction } from '../main/db/repositories/payments'
 export type { DashboardSummary, DirectionBalance, CurrencyAmount } from '../main/db/repositories/summary'
 export type { DebtSeriesPoint, TopDebtor } from '../main/db/repositories/stats'
 export type {
   NewClientInput,
   ClientPatchInput,
   NewTransactionInput,
-  NewPaymentInput
+  NewPaymentInput,
+  LineItemInput
 } from '../main/ipc/schemas'
 export type { WaStatus, BatchItem, BatchProgress, BatchDone } from '../main/whatsapp/client'
