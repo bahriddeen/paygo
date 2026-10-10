@@ -49,6 +49,13 @@ export const NewPaymentSchema = z.object({
   paid_at: z.number().int().positive().optional()
 })
 
+export const PaymentPatchSchema = z.object({
+  amount: z.number().int().positive().optional(),
+  method: z.string().max(20).nullable().optional(),
+  note: z.string().max(500).nullable().optional(),
+  paid_at: z.number().int().positive().optional()
+})
+
 export const StatsSeriesSchema = z.object({
   branchId: z.number().int().positive(),
   currency: Currency,
@@ -90,4 +97,5 @@ export type NewClientInput = z.input<typeof NewClientSchema>
 export type ClientPatchInput = z.input<typeof ClientPatchSchema>
 export type NewTransactionInput = z.input<typeof NewTransactionSchema>
 export type NewPaymentInput = z.input<typeof NewPaymentSchema>
+export type PaymentPatchInput = z.input<typeof PaymentPatchSchema>
 export type LineItemInput = z.input<typeof LineItemSchema>

@@ -21,7 +21,8 @@
     "save": "Saqlash",
     "edit": "Tahrirlash",
     "startFresh": "Ishni boshlash",
-    "startFreshHint": "Demo ma'lumotlarni (mijozlar, taminotchilar, operatsiyalar) o'chirib, toza ro'yxat bilan boshlaydi."
+    "startFreshHint": "Demo ma'lumotlarni (mijozlar, taminotchilar, operatsiyalar) o'chirib, toza ro'yxat bilan boshlaydi.",
+    "genericError": "Nimadir xato ketdi. Qaytadan urinib ko'ring."
   },
   "clients": {
     "addClient": "Mijoz qo'shish",
@@ -36,8 +37,6 @@
     "sortName": "Ism bo'yicha (A–Z)",
     "sortNewest": "Avval yangilari",
     "sortTrust": "Ishonch bo'yicha",
-    "archive": "Arxivlash",
-    "archiveConfirmBody": "Mijoz ro'yxatdan yashiriladi. Barcha yozuvlari saqlanadi.",
     "noResults": "Hech narsa topilmadi",
     "selectPrompt": "Ro'yxatdan mijozni tanlang",
     "totalDebt": "Umumiy qarz",
@@ -45,7 +44,7 @@
     "addDebt": "Qarz",
     "payment": "To'lov",
     "delete": "O'chirish",
-    "deleteConfirm": "Mijoz o'chirilsinmi? Barcha yozuvlari yashiriladi.",
+    "deleteConfirm": "Mijoz butunlay o'chirilsinmi? Uning barcha amallari va to'lovlari qaytarib bo'lmas tarzda o'chiriladi.",
     "call": "Qo'ng'iroq",
     "noOpenDebts": "Ochiq qarzlar yo'q",
     "debtLabel": "Qarz",
@@ -62,7 +61,8 @@
     "filterNoDebt": "Qarzsiz",
     "sortOldest": "Avval eskilari",
     "sortDebt": "Qarz miqdori bo'yicha",
-    "sortOverdue": "Muddat bo'yicha"
+    "sortOverdue": "Muddat bo'yicha",
+    "deleteBalanceWarning": "Mijozda to'lanmagan qarz bor. O'chirilganda bu summa ham yo'qoladi:"
   },
   "main": {
     "outstanding": "Umumiy qoldiq qarz",
@@ -109,6 +109,9 @@
     "deleteConfirm": "Amal o'chirilsinmi? Bog'liq to'lovlar ham o'chiriladi.",
     "amountBelowPaid": "Summa to'langanidan kam",
     "delete": "O'chirish",
+    "editPaymentTitle": "To'lovni tahrirlash",
+    "deletePayment": "To'lovni o'chirish",
+    "deletePaymentConfirm": "Bu to'lov o'chirilsinmi?",
     "lineItems": {
       "product": "Mahsulot",
       "quantity": "Soni",
@@ -116,12 +119,18 @@
       "total": "Summasi",
       "addRow": "Qator qo'shish",
       "grandTotal": "Jami summa"
-    }
+    },
+    "dueBeforeIssued": "Qaytarish muddati amal sanasidan oldin"
   },
   "history": {
     "aria": "Tarix",
     "title": "To'lovlar tarixi",
     "empty": "Hozircha to'lovlar yo'q"
+  },
+  "toast": {
+    "undo": "Bekor qilish",
+    "transactionAdded": "Amal qo'shildi",
+    "paymentAdded": "To'lov qo'shildi"
   },
   "stats": {
     "owed": "Bizga qarzdor",
@@ -295,7 +304,7 @@
   "suppliers": {
     "addSupplier": "Taminotchi qo'shish",
     "editSupplier": "Taminotchini tahrirlash",
-    "deleteConfirm": "Taminotchi ro'yxatdan yashiriladi. Barcha yozuvlari saqlanadi.",
+    "deleteConfirm": "Taminotchi butunlay o'chirilsinmi? Uning barcha amallari va to'lovlari qaytarib bo'lmas tarzda o'chiriladi.",
     "selectPrompt": "Ro'yxatdan taminotchini tanlang"
   }
 }

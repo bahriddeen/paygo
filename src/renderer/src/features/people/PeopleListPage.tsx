@@ -9,7 +9,7 @@ import {
   useCategories,
   useCreateClient,
   useUpdateClient,
-  useArchiveClient,
+  useDeleteClient,
   type Client,
   type ClientKind
 } from '@/lib/api'
@@ -71,6 +71,7 @@ export function PeopleListPage({ kind }: { kind: ClientKind }) {
   }, [routeId])
   const [editing, setEditing] = useState<Editing>(undefined)
   const [confirmDelete, setConfirmDelete] = useState<Client | null>(null)
+  const [deleteError, setDeleteError] = useState('')
   const [manageOpen, setManageOpen] = useState(false)
 
   const clients = useClients(branchId ? { branchId, search, kind } : undefined)
@@ -80,7 +81,7 @@ export function PeopleListPage({ kind }: { kind: ClientKind }) {
   const categories = useCategories(branchId, kind)
   const createM = useCreateClient()
   const updateM = useUpdateClient()
-  const archiveM = useArchiveClient()
+  const deleteM = useDeleteClient()
 
   const summary = useMemo(() => {
     const now = Math.floor(Date.now() / 1000)
@@ -401,23 +402,57 @@ export function PeopleListPage({ kind }: { kind: ClientKind }) {
         />
       </Modal>
 
-      <Modal open={confirmDelete !== null} onClose={() => setConfirmDelete(null)} title={t('clients.delete')}>
+      <Modal
+        open={confirmDelete !== null}
+        onClose={() => {
+          setConfirmDelete(null)
+          setDeleteError('')
+        }}
+        title={t('clients.delete')}
+      >
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">{deleteConfirmBody}</p>
+          {confirmDelete && (summary.get(confirmDelete.id)?.lendTotal ?? 0) > 0 ? (
+            <div className="space-y-1.5 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2">
+              <p className="text-sm font-medium text-destructive">{t('clients.deleteBalanceWarning')}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {[...(summary.get(confirmDelete.id)?.lend ?? new Map())]
+                  .filter(([, amount]) => amount > 0)
+                  .map(([currency, amount]) => (
+                    <span
+                      key={currency}
+                      className="rounded-md bg-card px-2 py-0.5 font-mono text-sm font-semibold tabular-nums text-destructive"
+                    >
+                      {formatMoney(amount, currency)}
+                    </span>
+                  ))}
+              </div>
+            </div>
+          ) : null}
+          {deleteError ? <p className="text-sm text-destructive">{deleteError}</p> : null}
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setConfirmDelete(null)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setConfirmDelete(null)
+                setDeleteError('')
+              }}
+            >
               {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
+              disabled={deleteM.isPending}
               onClick={() => {
                 if (!confirmDelete) return
                 const id = confirmDelete.id
-                archiveM.mutate(id, {
+                setDeleteError('')
+                deleteM.mutate(id, {
                   onSuccess: () => {
                     setConfirmDelete(null)
                     if (selectedId === id) setSelectedId(null)
-                  }
+                  },
+                  onError: () => setDeleteError(t('common.genericError'))
                 })
               }}
             >

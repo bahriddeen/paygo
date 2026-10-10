@@ -19,7 +19,7 @@ export function listCategories(db: DatabaseSync, branchId: number, kind?: Client
   return db
     .prepare(
       `SELECT g.id, g.branch_id, g.kind, g.name,
-        (SELECT COUNT(*) FROM clients c WHERE c.group_id = g.id AND c.archived_at IS NULL) AS count
+        (SELECT COUNT(*) FROM clients c WHERE c.group_id = g.id) AS count
        FROM client_groups g
        WHERE ${clauses.join(' AND ')}
        ORDER BY g.name COLLATE NOCASE`
@@ -44,7 +44,7 @@ export function renameCategory(db: DatabaseSync, id: number, name: string): Cate
   return db
     .prepare(
       `SELECT g.id, g.branch_id, g.kind, g.name,
-        (SELECT COUNT(*) FROM clients c WHERE c.group_id = g.id AND c.archived_at IS NULL) AS count
+        (SELECT COUNT(*) FROM clients c WHERE c.group_id = g.id) AS count
        FROM client_groups g WHERE g.id = ?`
     )
     .get(id) as unknown as Category

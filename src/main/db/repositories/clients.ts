@@ -13,7 +13,6 @@ export interface Client {
   trust_level: number
   created_at: number
   updated_at: number
-  archived_at: number | null
 }
 
 export type ClientSort = 'name' | 'newest' | 'trust'
@@ -69,7 +68,7 @@ export function listClients(
 ): Client[] {
   const order = ORDER_BY[opts?.sort ?? 'name']
   const search = opts?.search?.trim()
-  const clauses = ['branch_id = ?', 'archived_at IS NULL']
+  const clauses = ['branch_id = ?']
   const params: (string | number)[] = [branchId]
   if (opts?.kind) {
     clauses.push('kind = ?')
@@ -107,6 +106,23 @@ export function updateClient(db: DatabaseSync, id: number, patch: ClientPatch): 
   return updated
 }
 
-export function archiveClient(db: DatabaseSync, id: number): void {
-  db.prepare('UPDATE clients SET archived_at = unixepoch() WHERE id = ?').run(id)
+/** Permanently remove a client and every transaction/payment/line item that
+ *  belongs to them — there is no archive/undo; this is a hard delete. */
+export function deleteClient(db: DatabaseSync, id: number): void {
+  db.exec('BEGIN')
+  try {
+    db.prepare(
+      `DELETE FROM transaction_line_items
+       WHERE transaction_id IN (SELECT id FROM transactions WHERE client_id = ?)`
+    ).run(id)
+    db.prepare('DELETE FROM payments WHERE transaction_id IN (SELECT id FROM transactions WHERE client_id = ?)').run(
+      id
+    )
+    db.prepare('DELETE FROM transactions WHERE client_id = ?').run(id)
+    db.prepare('DELETE FROM clients WHERE id = ?').run(id)
+    db.exec('COMMIT')
+  } catch (err) {
+    db.exec('ROLLBACK')
+    throw err
+  }
 }

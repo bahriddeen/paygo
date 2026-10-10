@@ -88,6 +88,11 @@ export function listLineItems(db: DatabaseSync, transactionId: number): LineItem
 }
 
 export function createTransaction(db: DatabaseSync, input: NewTransaction): Transaction {
+  const issuedAt = input.issued_at ?? Math.floor(Date.now() / 1000)
+  if (input.due_at != null && startOfDaySec(input.due_at) < startOfDaySec(issuedAt)) {
+    throw new Error('createTransaction: due date is before the issue date')
+  }
+
   db.exec('BEGIN')
   try {
     const info = db
@@ -197,6 +202,12 @@ export function updateTransaction(
   const current = getTransaction(db, id)
   if (!current) throw new Error(`updateTransaction: transaction ${id} not found`)
 
+  const finalIssuedAt = patch.issued_at ?? current.issued_at
+  const finalDueAt = patch.due_at !== undefined ? patch.due_at : current.due_at
+  if (finalDueAt != null && startOfDaySec(finalDueAt) < startOfDaySec(finalIssuedAt)) {
+    throw new Error('updateTransaction: due date is before the issue date')
+  }
+
   db.exec('BEGIN')
   try {
     if (patch.line_items === null) {
@@ -209,6 +220,13 @@ export function updateTransaction(
       const paid = current.amount - transactionRemaining(db, id)
       if (patch.amount < paid) {
         throw new Error(`updateTransaction: amount ${patch.amount} is below paid ${paid}`)
+      }
+    }
+
+    if (patch.currency !== undefined && patch.currency !== current.currency) {
+      const paid = current.amount - transactionRemaining(db, id)
+      if (paid > 0) {
+        throw new Error('updateTransaction: currency cannot change once payments have been recorded')
       }
     }
 

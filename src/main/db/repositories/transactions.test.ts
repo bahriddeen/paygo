@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from 'vitest'
 import type { DatabaseSync } from 'node:sqlite'
 import { createDatabase } from '../createDatabase'
-import { createClient } from './clients'
+import { createClient, deleteClient } from './clients'
 import {
   createTransaction,
   updateTransaction,
@@ -9,7 +9,7 @@ import {
   listLineItems,
   listTransactions
 } from './transactions'
-import { addPayment } from './payments'
+import { addPayment, listPayments } from './payments'
 import { startOfDaySec } from './dateUtil'
 
 const NOW = 1_700_000_000
@@ -138,6 +138,92 @@ describe('updateTransaction with line_items', () => {
   })
 })
 
+describe('updateTransaction currency lock', () => {
+  test('allows changing currency before any payment is recorded', () => {
+    const t = createTransaction(db, {
+      branch_id: 1,
+      client_id: client,
+      direction: 'lend',
+      amount: 10000,
+      currency: 'UZS',
+      issued_at: NOW
+    })
+    const updated = updateTransaction(db, t.id, { currency: 'KGS' })
+    expect(updated.currency).toBe('KGS')
+  })
+
+  test('rejects changing currency once a payment has been recorded', () => {
+    const t = createTransaction(db, {
+      branch_id: 1,
+      client_id: client,
+      direction: 'lend',
+      amount: 10000,
+      currency: 'UZS',
+      issued_at: NOW
+    })
+    addPayment(db, { transaction_id: t.id, amount: 1000, paid_at: NOW })
+
+    expect(() => updateTransaction(db, t.id, { currency: 'KGS' })).toThrow()
+  })
+
+  test('allows other edits that keep the same currency even after a payment', () => {
+    const t = createTransaction(db, {
+      branch_id: 1,
+      client_id: client,
+      direction: 'lend',
+      amount: 10000,
+      currency: 'UZS',
+      issued_at: NOW
+    })
+    addPayment(db, { transaction_id: t.id, amount: 1000, paid_at: NOW })
+
+    const updated = updateTransaction(db, t.id, { currency: 'UZS', description: 'note' })
+    expect(updated.description).toBe('note')
+  })
+})
+
+describe('due date validation', () => {
+  test('createTransaction rejects a due date before the issue date', () => {
+    expect(() =>
+      createTransaction(db, {
+        branch_id: 1,
+        client_id: client,
+        direction: 'lend',
+        amount: 10000,
+        currency: 'UZS',
+        issued_at: NOW,
+        due_at: NOW - 86400
+      })
+    ).toThrow()
+  })
+
+  test('createTransaction allows a due date equal to the issue date', () => {
+    const t = createTransaction(db, {
+      branch_id: 1,
+      client_id: client,
+      direction: 'lend',
+      amount: 10000,
+      currency: 'UZS',
+      issued_at: NOW,
+      due_at: NOW
+    })
+    expect(t.due_at).toBe(NOW)
+  })
+
+  test('updateTransaction rejects moving the due date before the (possibly also updated) issue date', () => {
+    const t = createTransaction(db, {
+      branch_id: 1,
+      client_id: client,
+      direction: 'lend',
+      amount: 10000,
+      currency: 'UZS',
+      issued_at: NOW,
+      due_at: NOW + 86400
+    })
+    expect(() => updateTransaction(db, t.id, { due_at: NOW - 86400 })).toThrow()
+  })
+})
+
 describe('deleteTransaction', () => {
   test('removes line items along with the transaction', () => {
     const t = createTransaction(db, {
@@ -153,6 +239,38 @@ describe('deleteTransaction', () => {
     deleteTransaction(db, t.id)
 
     expect(listLineItems(db, t.id)).toHaveLength(0)
+  })
+
+  test('removes its payments along with the transaction', () => {
+    const t = createTransaction(db, {
+      branch_id: 1,
+      client_id: client,
+      direction: 'lend',
+      amount: 10000,
+      currency: 'UZS',
+      issued_at: NOW
+    })
+    addPayment(db, { transaction_id: t.id, amount: 4000, paid_at: NOW })
+
+    deleteTransaction(db, t.id)
+
+    expect(listPayments(db, t.id)).toHaveLength(0)
+  })
+})
+
+describe('listTransactions excludes deleted clients', () => {
+  test('a transaction belonging to a deleted client is gone from branch-wide lists', () => {
+    createTransaction(db, {
+      branch_id: 1,
+      client_id: client,
+      direction: 'lend',
+      amount: 10000,
+      currency: 'UZS',
+      issued_at: NOW
+    })
+    deleteClient(db, client)
+
+    expect(listTransactions(db, 1)).toHaveLength(0)
   })
 })
 

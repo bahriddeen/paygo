@@ -33,7 +33,7 @@ import {
   listClients,
   getClient,
   updateClient,
-  archiveClient
+  deleteClient
 } from '../db/repositories/clients'
 import {
   createTransaction,
@@ -47,7 +47,9 @@ import {
   addPayment,
   listPayments,
   listBranchPayments,
-  listPaymentsByClient
+  listPaymentsByClient,
+  updatePayment,
+  deletePayment
 } from '../db/repositories/payments'
 import { dashboardSummary, clientBalance } from '../db/repositories/summary'
 import { debtSeries, topDebtors } from '../db/repositories/stats'
@@ -59,6 +61,7 @@ import {
   ClientPatchSchema,
   NewTransactionSchema,
   NewPaymentSchema,
+  PaymentPatchSchema,
   LineItemSchema,
   StatsSeriesSchema,
   TopDebtorsSchema,
@@ -125,6 +128,10 @@ const ImportSchema = z.object({ mode: z.enum(['merge', 'replace']) })
 const SettingSetSchema = z.object({ key: z.enum(SETTING_KEYS), value: z.string().max(2000) })
 const WhatsappSchema = z.object({ phone: z.string().min(3).max(40), message: z.string().max(2000) })
 const NotifySchema = z.object({ title: z.string().max(120), body: z.string().max(500) })
+const PaymentUpdateSchema = z.object({
+  id: z.number().int().positive(),
+  patch: PaymentPatchSchema
+})
 const TransactionUpdateSchema = z.object({
   id: z.number().int().positive(),
   patch: z.object({
@@ -289,9 +296,9 @@ export function registerIpc(): void {
     return updateClient(getDb(), id, patch)
   })
 
-  ipcMain.handle('clients:archive', (_e, raw) => {
+  ipcMain.handle('clients:delete', (_e, raw) => {
     const { id } = IdSchema.parse(raw)
-    archiveClient(getDb(), id)
+    deleteClient(getDb(), id)
     return { ok: true }
   })
 
@@ -345,6 +352,17 @@ export function registerIpc(): void {
   ipcMain.handle('payments:add', (_e, raw) => {
     const input = NewPaymentSchema.parse(raw)
     return addPayment(getDb(), input)
+  })
+
+  ipcMain.handle('payments:update', (_e, raw) => {
+    const { id, patch } = PaymentUpdateSchema.parse(raw)
+    return updatePayment(getDb(), id, patch)
+  })
+
+  ipcMain.handle('payments:delete', (_e, raw) => {
+    const { id } = IdSchema.parse(raw)
+    deletePayment(getDb(), id)
+    return { ok: true }
   })
 
   ipcMain.handle('payments:byClient', (_e, raw) => {

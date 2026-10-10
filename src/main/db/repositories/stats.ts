@@ -23,10 +23,10 @@ export function debtSeries(
 ): DebtSeriesPoint[] {
   const lent = db
     .prepare(
-      `SELECT strftime('%Y-%m-%d', issued_at, 'unixepoch', 'localtime') AS date, SUM(amount) AS total
-       FROM transactions
-       WHERE branch_id = ? AND direction = 'lend' AND currency = ?
-         AND issued_at >= ? AND issued_at < ?
+      `SELECT strftime('%Y-%m-%d', t.issued_at, 'unixepoch', 'localtime') AS date, SUM(t.amount) AS total
+       FROM transactions t
+       WHERE t.branch_id = ? AND t.direction = 'lend' AND t.currency = ?
+         AND t.issued_at >= ? AND t.issued_at < ?
        GROUP BY date`
     )
     .all(branchId, currency, fromSec, toSec) as unknown as { date: string; total: number }[]

@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from 'vitest'
 import type { DatabaseSync } from 'node:sqlite'
 import { createDatabase } from '../createDatabase'
-import { createClient } from './clients'
+import { createClient, deleteClient } from './clients'
 import { createTransaction } from './transactions'
 import { addPayment } from './payments'
 import { dashboardSummary, clientBalance } from './summary'
@@ -42,9 +42,9 @@ describe('dashboardSummary', () => {
   })
 
   test('overdue counts only open lend debts past their due date', () => {
-    createTransaction(db, { branch_id: 1, client_id: clientId, direction: 'lend', amount: 100000, currency: 'UZS', due_at: NOW - 86400 })
-    createTransaction(db, { branch_id: 1, client_id: clientId, direction: 'lend', amount: 100000, currency: 'UZS', due_at: NOW + 86400 })
-    const paid = createTransaction(db, { branch_id: 1, client_id: clientId, direction: 'lend', amount: 100000, currency: 'UZS', due_at: NOW - 86400 })
+    createTransaction(db, { branch_id: 1, client_id: clientId, direction: 'lend', amount: 100000, currency: 'UZS', issued_at: NOW - 2 * 86400, due_at: NOW - 86400 })
+    createTransaction(db, { branch_id: 1, client_id: clientId, direction: 'lend', amount: 100000, currency: 'UZS', issued_at: NOW - 2 * 86400, due_at: NOW + 86400 })
+    const paid = createTransaction(db, { branch_id: 1, client_id: clientId, direction: 'lend', amount: 100000, currency: 'UZS', issued_at: NOW - 2 * 86400, due_at: NOW - 86400 })
     addPayment(db, { transaction_id: paid.id, amount: 100000 })
 
     const s = dashboardSummary(db, 1, NOW)
@@ -92,6 +92,29 @@ describe('dashboardSummary', () => {
   test('youOwe sums open borrow debts', () => {
     createTransaction(db, { branch_id: 1, client_id: clientId, direction: 'borrow', amount: 75000, currency: 'KGS' })
     expect(dashboardSummary(db, 1, NOW).youOwe).toEqual([{ currency: 'KGS', amount: 75000 }])
+  })
+
+  test('excludes a deleted client entirely: outstanding, overdue, and todayPayments', () => {
+    const t = createTransaction(db, {
+      branch_id: 1,
+      client_id: clientId,
+      direction: 'lend',
+      amount: 100000,
+      currency: 'UZS',
+      issued_at: NOW - 2 * 86400,
+      due_at: NOW - 86400
+    })
+    addPayment(db, { transaction_id: t.id, amount: 20000, paid_at: NOW })
+    deleteClient(db, clientId)
+
+    const s = dashboardSummary(db, 1, NOW)
+    expect(s.outstanding).toEqual([])
+    expect(s.outstandingClients).toBe(0)
+    expect(s.openDebts).toBe(0)
+    expect(s.overdue).toEqual([])
+    expect(s.overdueCount).toBe(0)
+    expect(s.todayPayments).toEqual([])
+    expect(s.todayPaymentsCount).toBe(0)
   })
 })
 

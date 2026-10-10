@@ -28,6 +28,12 @@ export function nowTimeInput(): string {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+/** unix seconds -> "HH:MM" for <input type="time"> (local time). */
+export function unixToTimeInput(sec: number): string {
+  const d = new Date(sec * 1000)
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 /**
  * Always "DD.MM.YYYY" — the shared convention across RU/KY/UZ. Intentionally
  * ignores `locale`/`toLocaleDateString`: Chromium's ICU data renders 'ky' as

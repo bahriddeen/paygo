@@ -13,7 +13,7 @@ describe('debtorRows', () => {
     const bek = createClient(db, { branch_id: 1, name: 'Bek' }).id
     const NOW = Math.floor(Date.now() / 1000)
 
-    const t1 = createTransaction(db, { branch_id: 1, client_id: ali, direction: 'lend', amount: 150000, currency: 'UZS', due_at: NOW - 86400 })
+    const t1 = createTransaction(db, { branch_id: 1, client_id: ali, direction: 'lend', amount: 150000, currency: 'UZS', issued_at: NOW - 2 * 86400, due_at: NOW - 86400 })
     addPayment(db, { transaction_id: t1.id, amount: 50000 })
     createTransaction(db, { branch_id: 1, client_id: bek, direction: 'lend', amount: 5000, currency: 'USD' })
     // A fully-paid debt should not appear.

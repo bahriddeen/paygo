@@ -8,6 +8,8 @@ import {
   useAddPayment,
   useUpdateTransaction,
   useDeleteTransaction,
+  useUpdatePayment,
+  useDeletePayment,
   useClientPayments,
   useTransactionPayments,
   useTransactionLineItems,
@@ -20,12 +22,23 @@ import { formatDate } from '@/lib/date'
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
+import { useToast } from '@/components/ui/toast'
 import { TransactionForm } from '../transactions/TransactionForm'
 import { TransactionEditForm } from '../transactions/TransactionEditForm'
 import { PaymentForm } from '../transactions/PaymentForm'
+import { PaymentEditForm } from '../transactions/PaymentEditForm'
 import { TransactionRow } from '../transactions/TransactionRow'
-import { PaymentHistoryList } from '../transactions/PaymentHistoryList'
+import { PaymentHistoryList, type HistoryItem } from '../transactions/PaymentHistoryList'
 import { TransactionSummary } from '../transactions/TransactionSummary'
+
+/** Maps a thrown repository error to a translated, user-facing message —
+ *  raw messages like "updatePayment: amount 500 exceeds remaining 300" are
+ *  written for developers, not shop owners, and aren't localized. */
+function paymentErrorMessage(err: unknown, t: (key: string) => string): string {
+  const message = err instanceof Error ? err.message : String(err)
+  if (message.includes('exceeds remaining')) return t('tx.amountExceedsRemaining')
+  return t('common.genericError')
+}
 
 export function PersonDetail({
   client,
@@ -41,12 +54,15 @@ export function PersonDetail({
   onDelete: () => void
 }) {
   const { t, i18n } = useTranslation()
+  const toast = useToast()
   const balance = useClientBalance(client.id)
   const txns = useTransactions({ branchId, clientId: client.id })
   const createTx = useCreateTransaction()
   const addPay = useAddPayment()
   const updateTx = useUpdateTransaction()
   const deleteTx = useDeleteTransaction()
+  const updatePay = useUpdatePayment()
+  const deletePay = useDeletePayment()
 
   const [addOpen, setAddOpen] = useState(false)
   const [addWide, setAddWide] = useState(false)
@@ -57,9 +73,21 @@ export function PersonDetail({
   const [deleteTarget, setDeleteTarget] = useState<TransactionWithBalance | null>(null)
   const [historyTarget, setHistoryTarget] = useState<TransactionWithBalance | null>(null)
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [editPayment, setEditPayment] = useState<HistoryItem | null>(null)
+  const [deletePaymentTarget, setDeletePaymentTarget] = useState<HistoryItem | null>(null)
+  const [editPaymentError, setEditPaymentError] = useState('')
+  const [deletePaymentError, setDeletePaymentError] = useState('')
   const clientHistory = useClientPayments(historyOpen ? client.id : undefined)
   const txHistory = useTransactionPayments(historyTarget?.id)
   const txHistoryLineItems = useTransactionLineItems(historyTarget?.id)
+
+  // The payment being edited may belong to the currently open per-transaction
+  // history (where we know its parent's remaining, for the "can't exceed
+  // remaining" bar) or the person-level "all history" list (where we don't).
+  const editPaymentMaxAmount =
+    editPayment && historyTarget
+      ? historyTarget.remaining + editPayment.amount
+      : undefined
 
   const lend = (balance.data ?? []).filter((b) => b.direction === 'lend')
   const borrow = (balance.data ?? []).filter((b) => b.direction === 'borrow')
@@ -204,9 +232,12 @@ export function PersonDetail({
           }}
           onSubmit={(input) =>
             createTx.mutate(input, {
-              onSuccess: () => {
+              onSuccess: (created) => {
                 setAddOpen(false)
                 setAddWide(false)
+                toast.pushUndo(t('toast.transactionAdded'), t('toast.undo'), () =>
+                  deleteTx.mutate(created.id)
+                )
               }
             })
           }
@@ -240,7 +271,16 @@ export function PersonDetail({
             transaction={payTarget}
             pending={addPay.isPending}
             onCancel={() => setPayTarget(null)}
-            onSubmit={(input) => addPay.mutate(input, { onSuccess: () => setPayTarget(null) })}
+            onSubmit={(input) =>
+              addPay.mutate(input, {
+                onSuccess: (created) => {
+                  setPayTarget(null)
+                  toast.pushUndo(t('toast.paymentAdded'), t('toast.undo'), () =>
+                    deletePay.mutate(created.id)
+                  )
+                }
+              })
+            }
           />
         ) : null}
       </Modal>
@@ -279,7 +319,11 @@ export function PersonDetail({
       </Modal>
 
       <Modal open={historyOpen} onClose={() => setHistoryOpen(false)} title={t('history.title')}>
-        <PaymentHistoryList payments={clientHistory.data ?? []} />
+        <PaymentHistoryList
+          payments={clientHistory.data ?? []}
+          onEdit={setEditPayment}
+          onDelete={setDeletePaymentTarget}
+        />
       </Modal>
 
       <Modal
@@ -291,9 +335,93 @@ export function PersonDetail({
         {historyTarget ? (
           <div className="space-y-3">
             <TransactionSummary tx={historyTarget} lineItems={txHistoryLineItems.data ?? []} />
-            <PaymentHistoryList payments={txHistory.data ?? []} />
+            <PaymentHistoryList
+              payments={txHistory.data ?? []}
+              onEdit={setEditPayment}
+              onDelete={setDeletePaymentTarget}
+            />
           </div>
         ) : null}
+      </Modal>
+
+      <Modal
+        open={editPayment !== null}
+        onClose={() => {
+          setEditPayment(null)
+          setEditPaymentError('')
+        }}
+        title={t('tx.editPaymentTitle')}
+      >
+        {editPayment ? (
+          <div className="space-y-3">
+            {editPaymentError ? (
+              <p className="text-sm text-destructive">{editPaymentError}</p>
+            ) : null}
+            <PaymentEditForm
+              payment={editPayment}
+              currency={editPayment.currency}
+              maxAmount={editPaymentMaxAmount}
+              pending={updatePay.isPending}
+              onCancel={() => {
+                setEditPayment(null)
+                setEditPaymentError('')
+              }}
+              onSubmit={(patch) => {
+                setEditPaymentError('')
+                updatePay.mutate(
+                  { id: editPayment.id, patch },
+                  {
+                    onSuccess: () => setEditPayment(null),
+                    onError: (err) =>
+                      setEditPaymentError(paymentErrorMessage(err, t))
+                  }
+                )
+              }}
+            />
+          </div>
+        ) : null}
+      </Modal>
+
+      <Modal
+        open={deletePaymentTarget !== null}
+        onClose={() => {
+          setDeletePaymentTarget(null)
+          setDeletePaymentError('')
+        }}
+        title={t('tx.deletePayment')}
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">{t('tx.deletePaymentConfirm')}</p>
+          {deletePaymentError ? (
+            <p className="text-sm text-destructive">{deletePaymentError}</p>
+          ) : null}
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeletePaymentTarget(null)
+                setDeletePaymentError('')
+              }}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (deletePaymentTarget) {
+                  setDeletePaymentError('')
+                  deletePay.mutate(deletePaymentTarget.id, {
+                    onSuccess: () => setDeletePaymentTarget(null),
+                    onError: (err) =>
+                      setDeletePaymentError(paymentErrorMessage(err, t))
+                  })
+                }
+              }}
+            >
+              {t('tx.deletePayment')}
+            </Button>
+          </div>
+        </div>
       </Modal>
 
       <Modal open={deleteTarget !== null} onClose={() => setDeleteTarget(null)} title={t('tx.delete')}>

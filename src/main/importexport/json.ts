@@ -59,7 +59,7 @@ function dumpBranch(db: DatabaseSync, branchId: number, name: string): BranchDum
     categories: all('SELECT id, name, kind FROM client_groups WHERE branch_id = ?'),
     clients: all(
       `SELECT id, group_id, name, kind, phone, description, trust_level, created_at, is_demo
-       FROM clients WHERE branch_id = ? AND archived_at IS NULL`
+       FROM clients WHERE branch_id = ?`
     ),
     transactions: all(
       `SELECT id, client_id, direction, amount, currency, description, issued_at, due_at, is_demo

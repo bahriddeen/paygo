@@ -137,6 +137,10 @@ export function TransactionForm({
       setError(t('tx.amount'))
       return
     }
+    if (due && due < date) {
+      setError(t('tx.dueBeforeIssued'))
+      return
+    }
     onSubmit({
       branch_id: branchId,
       client_id: Number(clientId),

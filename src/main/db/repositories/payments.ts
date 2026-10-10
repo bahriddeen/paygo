@@ -57,6 +57,56 @@ export function listPayments(db: DatabaseSync, transactionId: number): Payment[]
     .all(transactionId) as unknown as Payment[]
 }
 
+export function getPayment(db: DatabaseSync, id: number): Payment | null {
+  return (
+    (db.prepare('SELECT * FROM payments WHERE id = ?').get(id) as unknown as Payment) ?? null
+  )
+}
+
+export interface PaymentPatch {
+  amount?: number
+  method?: string | null
+  note?: string | null
+  paid_at?: number
+}
+
+/** Correct a mis-entered payment. The new amount may not exceed what's left on
+ *  the transaction once this payment's own current amount is added back. */
+export function updatePayment(db: DatabaseSync, id: number, patch: PaymentPatch): Payment {
+  const current = getPayment(db, id)
+  if (!current) throw new Error(`updatePayment: payment ${id} not found`)
+
+  if (patch.amount !== undefined) {
+    if (patch.amount <= 0) throw new Error('updatePayment: amount must be positive')
+    const remaining = transactionRemaining(db, current.transaction_id)
+    const maxAmount = remaining + current.amount
+    if (patch.amount > maxAmount) {
+      throw new Error(`updatePayment: amount ${patch.amount} exceeds remaining ${maxAmount}`)
+    }
+  }
+
+  const fields: string[] = []
+  const values: (string | number | null)[] = []
+  for (const key of ['amount', 'method', 'note', 'paid_at'] as const) {
+    if (patch[key] !== undefined) {
+      fields.push(`${key} = ?`)
+      values.push(patch[key] as string | number | null)
+    }
+  }
+  if (fields.length > 0) {
+    db.prepare(`UPDATE payments SET ${fields.join(', ')} WHERE id = ?`).run(...values, id)
+  }
+
+  const updated = getPayment(db, id)
+  if (!updated) throw new Error(`updatePayment: payment ${id} not found`)
+  return updated
+}
+
+/** Remove a wrongly entered payment, restoring its amount to the transaction's remaining. */
+export function deletePayment(db: DatabaseSync, id: number): void {
+  db.prepare('DELETE FROM payments WHERE id = ?').run(id)
+}
+
 export interface PaymentWithTransaction {
   id: number
   transaction_id: number

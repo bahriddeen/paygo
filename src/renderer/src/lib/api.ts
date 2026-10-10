@@ -17,6 +17,7 @@ import type {
   DirectionBalance,
   NewTransactionInput,
   NewPaymentInput,
+  PaymentPatchInput,
   TransactionQuery,
   DebtSeriesPoint,
   TopDebtor,
@@ -47,6 +48,7 @@ export type {
   DirectionBalance,
   NewTransactionInput,
   NewPaymentInput,
+  PaymentPatchInput,
   DebtSeriesPoint,
   TopDebtor,
   WaStatus,
@@ -205,11 +207,15 @@ export function useUpdateClient() {
   })
 }
 
-export function useArchiveClient() {
+/** Permanently deletes a client and all of their transactions/payments — not reversible. */
+export function useDeleteClient() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: number) => window.api.clients.archive(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['clients'] })
+    mutationFn: (id: number) => window.api.clients.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clients'] })
+      invalidateLedger(qc)
+    }
   })
 }
 
@@ -289,6 +295,23 @@ export function useAddPayment() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (input: NewPaymentInput) => window.api.payments.add(input),
+    onSuccess: () => invalidateLedger(qc)
+  })
+}
+
+export function useUpdatePayment() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (args: { id: number; patch: PaymentPatchInput }) =>
+      window.api.payments.update(args.id, args.patch),
+    onSuccess: () => invalidateLedger(qc)
+  })
+}
+
+export function useDeletePayment() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => window.api.payments.delete(id),
     onSuccess: () => invalidateLedger(qc)
   })
 }

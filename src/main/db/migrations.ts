@@ -4,7 +4,7 @@ import type { DatabaseSync } from 'node:sqlite'
  * Ordered migrations. Each entry's index+1 is its target user_version.
  * Never edit a shipped migration — append a new one.
  */
-const MIGRATIONS: string[] = [
+export const MIGRATIONS: string[] = [
   // v1 — initial schema
   `
   CREATE TABLE branches (
@@ -104,6 +104,26 @@ const MIGRATIONS: string[] = [
     created_at     INTEGER NOT NULL DEFAULT (unixepoch())
   );
   CREATE INDEX idx_line_items_txn ON transaction_line_items(transaction_id, position);
+  `,
+
+  // v5 — deleting a client is now a permanent hard delete (see deleteClient in
+  // clients.ts), not a soft archive. Purge any rows that were previously
+  // soft-deleted under the old archived_at model, cascading through their
+  // transactions/payments/line items, then drop the now-unused column so
+  // there's no vestigial "undelete" state left in the schema.
+  `
+  DELETE FROM transaction_line_items
+    WHERE transaction_id IN (
+      SELECT id FROM transactions WHERE client_id IN (SELECT id FROM clients WHERE archived_at IS NOT NULL)
+    );
+  DELETE FROM payments
+    WHERE transaction_id IN (
+      SELECT id FROM transactions WHERE client_id IN (SELECT id FROM clients WHERE archived_at IS NOT NULL)
+    );
+  DELETE FROM transactions
+    WHERE client_id IN (SELECT id FROM clients WHERE archived_at IS NOT NULL);
+  DELETE FROM clients WHERE archived_at IS NOT NULL;
+  ALTER TABLE clients DROP COLUMN archived_at;
   `
 ]
 

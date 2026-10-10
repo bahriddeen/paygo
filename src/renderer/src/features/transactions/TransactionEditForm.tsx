@@ -90,6 +90,10 @@ export function TransactionEditForm({
       setError(t('tx.amountBelowPaid'))
       return
     }
+    if (due && due < date) {
+      setError(t('tx.dueBeforeIssued'))
+      return
+    }
     onSubmit({
       amount: minor,
       currency,
@@ -137,6 +141,7 @@ export function TransactionEditForm({
             id="etx-currency"
             value={currency}
             onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
+            disabled={transaction.paid > 0}
             className={selectClass}
           >
             {CURRENCY_CODES.map((c) => (

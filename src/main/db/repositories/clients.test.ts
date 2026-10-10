@@ -1,7 +1,9 @@
 import { describe, test, expect, beforeEach } from 'vitest'
 import type { DatabaseSync } from 'node:sqlite'
 import { createDatabase } from '../createDatabase'
-import { createClient, listClients, getClient, updateClient, archiveClient } from './clients'
+import { createClient, listClients, getClient, updateClient, deleteClient } from './clients'
+import { createTransaction } from './transactions'
+import { addPayment } from './payments'
 
 let db: DatabaseSync
 
@@ -17,7 +19,6 @@ describe('clients repo', () => {
     expect(c.name).toBe('Ali')
     expect(c.trust_level).toBe(3)
     expect(c.phone).toBeNull()
-    expect(c.archived_at).toBeNull()
     expect(c.kind).toBe('client')
   })
 
@@ -59,11 +60,23 @@ describe('clients repo', () => {
     expect(listClients(db, 1, { sort: 'trust' }).map((c) => c.name)).toEqual(['High', 'Low'])
   })
 
-  test('archiveClient removes the client from the list but keeps the row', () => {
+  test('deleteClient permanently removes the client and all their transactions/payments', () => {
     const c = createClient(db, { branch_id: 1, name: 'Ali' })
-    archiveClient(db, c.id)
+    const t = createTransaction(db, {
+      branch_id: 1,
+      client_id: c.id,
+      direction: 'lend',
+      amount: 10000,
+      currency: 'UZS'
+    })
+    addPayment(db, { transaction_id: t.id, amount: 3000 })
+
+    deleteClient(db, c.id)
+
     expect(listClients(db, 1)).toHaveLength(0)
-    expect(getClient(db, c.id)?.archived_at).not.toBeNull()
+    expect(getClient(db, c.id)).toBeNull()
+    expect(db.prepare('SELECT COUNT(*) AS n FROM transactions WHERE client_id = ?').get(c.id)).toEqual({ n: 0 })
+    expect(db.prepare('SELECT COUNT(*) AS n FROM payments WHERE transaction_id = ?').get(t.id)).toEqual({ n: 0 })
   })
 
   test('updateClient changes provided fields only', () => {

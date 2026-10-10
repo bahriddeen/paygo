@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Modal } from '@/components/ui/modal'
 import { Pager } from '@/components/ui/pager'
 import { EmptyState } from '@/components/EmptyState'
+import { useToast } from '@/components/ui/toast'
 import { useListControls } from '@/lib/useListControls'
 import { useBranch } from '@/app/BranchProvider'
 import {
@@ -15,6 +16,8 @@ import {
   useClients,
   useCreateTransaction,
   useAddPayment,
+  useDeleteTransaction,
+  useDeletePayment,
   type TransactionWithBalance
 } from '@/lib/api'
 import { formatMoney, type CurrencyCode } from '@/lib/format'
@@ -78,6 +81,7 @@ function SummaryCell({
 export default function MainPage() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
+  const toast = useToast()
   const { activeBranchId } = useBranch()
   const branchId = activeBranchId ?? undefined
 
@@ -87,6 +91,8 @@ export default function MainPage() {
   const clientsQ = useClients(branchId ? { branchId, sort: 'name' } : undefined)
   const createTx = useCreateTransaction()
   const addPay = useAddPayment()
+  const deleteTx = useDeleteTransaction()
+  const deletePay = useDeletePayment()
 
   const [txOpen, setTxOpen] = useState(false)
   const [txWide, setTxWide] = useState(false)
@@ -249,9 +255,12 @@ export default function MainPage() {
             }}
             onSubmit={(input) =>
               createTx.mutate(input, {
-                onSuccess: () => {
+                onSuccess: (created) => {
                   setTxOpen(false)
                   setTxWide(false)
+                  toast.pushUndo(t('toast.transactionAdded'), t('toast.undo'), () =>
+                    deleteTx.mutate(created.id)
+                  )
                 }
               })
             }
@@ -265,7 +274,16 @@ export default function MainPage() {
             transaction={payFor}
             pending={addPay.isPending}
             onCancel={() => setPayFor(null)}
-            onSubmit={(input) => addPay.mutate(input, { onSuccess: () => setPayFor(null) })}
+            onSubmit={(input) =>
+              addPay.mutate(input, {
+                onSuccess: (created) => {
+                  setPayFor(null)
+                  toast.pushUndo(t('toast.paymentAdded'), t('toast.undo'), () =>
+                    deletePay.mutate(created.id)
+                  )
+                }
+              })
+            }
           />
         ) : null}
       </Modal>

@@ -16,6 +16,7 @@ import type {
   ClientPatchInput,
   NewTransactionInput,
   NewPaymentInput,
+  PaymentPatchInput,
   LineItemInput
 } from '../main/ipc/schemas'
 import type { WaStatus, BatchItem, BatchProgress, BatchDone } from '../main/whatsapp/client'
@@ -87,7 +88,7 @@ const api = {
     create: (input: NewClientInput): Promise<Client> => ipcRenderer.invoke('clients:create', input),
     update: (id: number, patch: ClientPatchInput): Promise<Client> =>
       ipcRenderer.invoke('clients:update', { id, patch }),
-    archive: (id: number): Promise<{ ok: boolean }> => ipcRenderer.invoke('clients:archive', { id }),
+    delete: (id: number): Promise<{ ok: boolean }> => ipcRenderer.invoke('clients:delete', { id }),
     balance: (clientId: number): Promise<DirectionBalance[]> =>
       ipcRenderer.invoke('clients:balance', { clientId })
   },
@@ -119,6 +120,9 @@ const api = {
     list: (transactionId: number): Promise<Payment[]> =>
       ipcRenderer.invoke('payments:list', { transactionId }),
     add: (input: NewPaymentInput): Promise<Payment> => ipcRenderer.invoke('payments:add', input),
+    update: (id: number, patch: PaymentPatchInput): Promise<Payment> =>
+      ipcRenderer.invoke('payments:update', { id, patch }),
+    delete: (id: number): Promise<{ ok: boolean }> => ipcRenderer.invoke('payments:delete', { id }),
     byClient: (clientId: number): Promise<PaymentWithTransaction[]> =>
       ipcRenderer.invoke('payments:byClient', { clientId }),
     byDate: (branchId: number, from: number, to: number): Promise<PaymentWithClient[]> =>
@@ -224,6 +228,7 @@ export type {
   ClientPatchInput,
   NewTransactionInput,
   NewPaymentInput,
+  PaymentPatchInput,
   LineItemInput
 } from '../main/ipc/schemas'
 export type { WaStatus, BatchItem, BatchProgress, BatchDone } from '../main/whatsapp/client'

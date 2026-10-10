@@ -1,4 +1,5 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { ToastProvider } from './components/ui/toast'
 import { ThemeProvider } from './app/ThemeProvider'
 import { ActivationGate } from './app/ActivationGate'
 import { LockGate } from './app/LockGate'
@@ -17,24 +18,26 @@ export default function App() {
     <ThemeProvider>
       <ActivationGate>
         <LockGate>
-          <HashRouter>
-            <Routes>
-              <Route element={<AppShell />}>
-                <Route index element={<Navigate to="/main" replace />} />
-                <Route path="/main" element={<MainPage />} />
-                <Route path="/payments/today" element={<TodayPaymentsPage />} />
-                <Route path="/overdue" element={<OverduePage />} />
-                <Route path="/clients" element={<ClientsPage />} />
-                <Route path="/clients/:id" element={<ClientsPage />} />
-                <Route path="/suppliers" element={<SuppliersPage />} />
-                <Route path="/suppliers/:id" element={<SuppliersPage />} />
-                <Route path="/statistics" element={<StatisticsPage />} />
-                <Route path="/reminders" element={<RemindersPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="*" element={<Navigate to="/main" replace />} />
-              </Route>
-            </Routes>
-          </HashRouter>
+          <ToastProvider>
+            <HashRouter>
+              <Routes>
+                <Route element={<AppShell />}>
+                  <Route index element={<Navigate to="/main" replace />} />
+                  <Route path="/main" element={<MainPage />} />
+                  <Route path="/payments/today" element={<TodayPaymentsPage />} />
+                  <Route path="/overdue" element={<OverduePage />} />
+                  <Route path="/clients" element={<ClientsPage />} />
+                  <Route path="/clients/:id" element={<ClientsPage />} />
+                  <Route path="/suppliers" element={<SuppliersPage />} />
+                  <Route path="/suppliers/:id" element={<SuppliersPage />} />
+                  <Route path="/statistics" element={<StatisticsPage />} />
+                  <Route path="/reminders" element={<RemindersPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="*" element={<Navigate to="/main" replace />} />
+                </Route>
+              </Routes>
+            </HashRouter>
+          </ToastProvider>
         </LockGate>
       </ActivationGate>
     </ThemeProvider>
