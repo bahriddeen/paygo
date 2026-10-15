@@ -22,6 +22,7 @@ import {
 } from '@/lib/api'
 import { formatMoney, type CurrencyCode } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { useDirectSend } from '@/lib/useDirectSend'
 import { TransactionForm } from '../transactions/TransactionForm'
 import { PaymentForm } from '../transactions/PaymentForm'
 import { TransactionRow } from '../transactions/TransactionRow'
@@ -90,6 +91,7 @@ export default function MainPage() {
   const overdue = useTransactions(branchId ? { branchId, overdue: true } : undefined)
   const clientsQ = useClients(branchId ? { branchId, sort: 'name' } : undefined)
   const createTx = useCreateTransaction()
+  const directSend = useDirectSend()
   const addPay = useAddPayment()
   const deleteTx = useDeleteTransaction()
   const deletePay = useDeletePayment()
@@ -258,8 +260,13 @@ export default function MainPage() {
                 onSuccess: (created) => {
                   setTxOpen(false)
                   setTxWide(false)
-                  toast.pushUndo(t('toast.transactionAdded'), t('toast.undo'), () =>
-                    deleteTx.mutate(created.id)
+                  const client = (clientsQ.data ?? []).find((c) => c.id === created.client_id)
+                  // WhatsApp goes out only once the undo window has passed.
+                  toast.pushUndo(
+                    t('toast.transactionAdded'),
+                    t('toast.undo'),
+                    () => deleteTx.mutate(created.id),
+                    () => directSend(created, client)
                   )
                 }
               })

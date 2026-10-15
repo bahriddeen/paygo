@@ -4,6 +4,7 @@ import {
   logoutWa,
   getStatus as getWaStatus,
   sendBatch,
+  sendOne,
   cancelBatch,
   onWaEvents
 } from '../whatsapp/client'
@@ -71,7 +72,8 @@ import {
   ChangePinSchema,
   RecoverSchema,
   ResetAccountSchema,
-  WaSendBatchSchema
+  WaSendBatchSchema,
+  WaSendDirectSchema
 } from './schemas'
 
 const IdSchema = z.object({ id: z.number().int().positive() })
@@ -115,6 +117,12 @@ const SETTING_KEYS = [
   'wa_template_ru',
   'wa_template_ky',
   'wa_template_uz',
+  'wa_direct_template_ru',
+  'wa_direct_template_ky',
+  'wa_direct_template_uz',
+  'wa_direct_send_enabled',
+  'phone_prefix',
+  'default_due_days',
   'backup_folder',
   'backup_schedule',
   'backup_last',
@@ -494,6 +502,7 @@ export function registerIpc(): void {
     )
     return { ok: true }
   })
+  ipcMain.handle('whatsapp:sendDirect', (_e, raw) => sendOne(WaSendDirectSchema.parse(raw)))
   ipcMain.handle('whatsapp:cancelBatch', () => {
     cancelBatch()
     return { ok: true }

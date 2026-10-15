@@ -23,6 +23,7 @@ import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
 import { useToast } from '@/components/ui/toast'
+import { useDirectSend } from '@/lib/useDirectSend'
 import { TransactionForm } from '../transactions/TransactionForm'
 import { TransactionEditForm } from '../transactions/TransactionEditForm'
 import { PaymentForm } from '../transactions/PaymentForm'
@@ -58,6 +59,7 @@ export function PersonDetail({
   const balance = useClientBalance(client.id)
   const txns = useTransactions({ branchId, clientId: client.id })
   const createTx = useCreateTransaction()
+  const directSend = useDirectSend()
   const addPay = useAddPayment()
   const updateTx = useUpdateTransaction()
   const deleteTx = useDeleteTransaction()
@@ -235,8 +237,12 @@ export function PersonDetail({
               onSuccess: (created) => {
                 setAddOpen(false)
                 setAddWide(false)
-                toast.pushUndo(t('toast.transactionAdded'), t('toast.undo'), () =>
-                  deleteTx.mutate(created.id)
+                // WhatsApp goes out only once the undo window has passed.
+                toast.pushUndo(
+                  t('toast.transactionAdded'),
+                  t('toast.undo'),
+                  () => deleteTx.mutate(created.id),
+                  () => directSend(created, client)
                 )
               }
             })

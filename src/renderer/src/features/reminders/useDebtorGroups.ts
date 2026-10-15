@@ -4,6 +4,7 @@ import { useAppSettings } from '@/app/SettingsProvider'
 import { useTransactions, type ClientKind } from '@/lib/api'
 import { type CurrencyCode } from '@/lib/format'
 import { daysBetween } from '@/lib/date'
+import { fillTemplate } from '@/lib/directSend'
 
 export interface DebtorGroup {
   client_id: number
@@ -12,10 +13,6 @@ export interface DebtorGroup {
   kind: ClientKind
   amounts: { currency: CurrencyCode; amount: number }[]
   maxDays: number
-}
-
-function fillTemplate(tmpl: string, vars: Record<string, string>): string {
-  return tmpl.replace(/\{\{(\w+)\}\}/g, (_m, key) => vars[key] ?? '')
 }
 
 export function amountsStr(

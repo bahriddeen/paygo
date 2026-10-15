@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { CURRENCIES, CURRENCY_CODES, toMinor, type CurrencyCode } from '@/lib/format'
 import { sanitizeAmountInput } from '@/lib/amount'
 import { dateInputToUnix, dateTimeInputToUnix, todayInput, nowTimeInput } from '@/lib/date'
+import { defaultDueInput, parseDueDays } from '@/lib/directSend'
 import { useAppSettings } from '@/app/SettingsProvider'
 import { useCategories, useCreateClient } from '@/lib/api'
 import { PersonForm, type PersonFormValues } from '../people/PersonForm'
@@ -38,7 +39,7 @@ export function TransactionForm({
   onLineItemsChange?: (hasLineItems: boolean) => void
 }) {
   const { t } = useTranslation()
-  const { defaultCurrency } = useAppSettings()
+  const { defaultCurrency, raw: settings } = useAppSettings()
   const [direction, setDirection] = useState<Direction>(defaultDirection)
   const [clientId, setClientId] = useState<string>(clients[0] ? String(clients[0].id) : '')
   const [amount, setAmount] = useState('')
@@ -51,7 +52,7 @@ export function TransactionForm({
   }
   const [date, setDate] = useState(todayInput())
   const [time, setTime] = useState(nowTimeInput())
-  const [due, setDue] = useState('')
+  const [due, setDue] = useState(() => defaultDueInput(parseDueDays(settings['default_due_days'])))
   const [error, setError] = useState('')
   const [addingPerson, setAddingPerson] = useState(false)
 

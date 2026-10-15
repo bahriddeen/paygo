@@ -130,7 +130,8 @@
   "toast": {
     "undo": "Bekor qilish",
     "transactionAdded": "Amal qo'shildi",
-    "paymentAdded": "To'lov qo'shildi"
+    "paymentAdded": "To'lov qo'shildi",
+    "directSendFailed": "{{name}} mijoziga WhatsApp orqali xabar yuborilmadi"
   },
   "stats": {
     "owed": "Bizga qarzdor",
@@ -292,7 +293,21 @@
     "deleteAccountWarning": "Bu BARCHA ma'lumotlarni qaytarib bo'lmaydigan tarzda o'chiradi: filiallar, mijozlar, taminotchilar, qarzlar, to'lovlar va sozlamalar. Dastur kodni qayta faollashtirishni talab qiladi.",
     "deleteAccountPrompt": "O'chirishni tasdiqlash uchun joriy PIN-kodni kiriting.",
     "deleteAccountWrongPin": "PIN-kod noto'g'ri",
-    "deleteAccountResetting": "Ma'lumotlar o'chirilmoqda… Dastur hozir qayta ishga tushadi."
+    "deleteAccountResetting": "Ma'lumotlar o'chirilmoqda… Dastur hozir qayta ishga tushadi.",
+    "phonePrefix": "Telefon prefiksi",
+    "phonePrefixHint": "Har bir telefon raqami maydoniga avtomatik qo'yiladi, masalan +998.",
+    "defaultDueDays": "Qaytarish muddati (standart), kun",
+    "defaultDueDaysHint": "0 — bugun. Muddatni operatsiya yaratishda o'zgartirish mumkin.",
+    "directSendEnabled": "Qarz yaratilganda mijozga xabar yuborish",
+    "directSendHint": "Faqat mijozlar qarzi uchun (yetkazib beruvchilar uchun emas) va WhatsApp ulangan bo'lsa ishlaydi.",
+    "directTemplateTitle": "Qarz yaratilgandagi xabar shabloni",
+    "directTemplateHint": "Mavjud: {{name}}, {{amount}}, {{dueDate}}, {{note}}",
+    "directTemplate": "Assalomu alaykum, {{name}}! Sizga qarz yozildi: {{amount}}. Qaytarish muddati: {{dueDate}}. {{note}}",
+    "waErrorLoggedOut": "Bu qurilma telefondagi WhatsApp'dan uzib qo'yilgan. «Ulash» tugmasini bosing va yangi QR-kodni skanerlang.",
+    "waStatusConnected": "WhatsApp ulangan",
+    "waStatusConnecting": "WhatsApp: ulanmoqda…",
+    "waStatusDisconnected": "WhatsApp ulanmagan — sozlamalarni ochish",
+    "waErrorReconnecting": "WhatsApp'ga ulanib bo'lmayapti — urinishlar davom etmoqda. Internet ishlayotgan bo'lsa-yu, xato yo'qolmasa, «Tozalash» tugmasini bosing va qurilmani qayta ulang."
   },
   "pages": {
     "clientsEmpty": "Mijozlar ro'yxati shu yerda bo'ladi.",

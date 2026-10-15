@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { useAppSettings } from '@/app/SettingsProvider'
+import { normalizePhone } from '@/lib/directSend'
 import { TrustSelector } from './TrustLevel'
 import type { Category, Client } from '@/lib/api'
 
@@ -31,8 +33,9 @@ export function PersonForm({
   pending?: boolean
 }) {
   const { t } = useTranslation()
+  const phonePrefix = (useAppSettings().raw['phone_prefix'] ?? '').trim()
   const [name, setName] = useState(initial?.name ?? '')
-  const [phone, setPhone] = useState(initial?.phone ?? '')
+  const [phone, setPhone] = useState(initial ? (initial.phone ?? '') : phonePrefix)
   const [description, setDescription] = useState(initial?.description ?? '')
   const [trust, setTrust] = useState(initial?.trust_level ?? 3)
   const [groupId, setGroupId] = useState<number | null>(initial?.group_id ?? null)
@@ -46,7 +49,7 @@ export function PersonForm({
     }
     onSubmit({
       name: name.trim(),
-      phone: phone.trim(),
+      phone: normalizePhone(phone, phonePrefix),
       description: description.trim(),
       trust_level: trust,
       group_id: groupId

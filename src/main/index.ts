@@ -4,6 +4,8 @@ import { initDb } from './db/connection'
 import { registerIpc } from './ipc'
 import { maybeAutoBackup } from './importexport/backup'
 import { maybeSeedDemoData } from './db/demoSeed'
+import { getSetting } from './db/repositories/settings'
+import { autoConnectWa } from './whatsapp/client'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -59,6 +61,9 @@ if (!gotTheLock) {
     maybeSeedDemoData(db) // fresh install only, once ever
     maybeAutoBackup(db) // run a scheduled backup if one is due
     createWindow()
+    // Resume the saved WhatsApp session so it's connected after every
+    // restart, not only after the user clicks Connect in Settings.
+    if (getSetting(db, 'whatsapp_enabled') === '1') autoConnectWa()
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()

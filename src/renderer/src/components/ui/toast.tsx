@@ -5,12 +5,14 @@ const UNDO_DURATION_MS = 5000
 interface ToastItem {
   id: number
   message: string
-  undoLabel: string
-  onUndo: () => void
+  undo?: { label: string; onUndo: () => void }
+  error?: boolean
 }
 
 interface ToastContextValue {
-  pushUndo: (message: string, undoLabel: string, onUndo: () => void) => void
+  /** `onExpire` runs only if the toast times out without Undo being pressed. */
+  pushUndo: (message: string, undoLabel: string, onUndo: () => void, onExpire?: () => void) => void
+  pushError: (message: string) => void
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null)
@@ -52,9 +54,26 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const pushUndo = useCallback(
-    (message: string, undoLabel: string, onUndo: () => void) => {
+    (message: string, undoLabel: string, onUndo: () => void, onExpire?: () => void) => {
       const id = nextId.current++
-      setToasts((prev) => [...prev, { id, message, undoLabel, onUndo }])
+      setToasts((prev) => [...prev, { id, message, undo: { label: undoLabel, onUndo } }])
+      timers.current.set(
+        id,
+        // Undo calls remove(), which clears this timer — so onExpire never
+        // fires for an undone action.
+        setTimeout(() => {
+          remove(id)
+          onExpire?.()
+        }, UNDO_DURATION_MS)
+      )
+    },
+    [remove]
+  )
+
+  const pushError = useCallback(
+    (message: string) => {
+      const id = nextId.current++
+      setToasts((prev) => [...prev, { id, message, error: true }])
       timers.current.set(
         id,
         setTimeout(() => remove(id), UNDO_DURATION_MS)
@@ -64,7 +83,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   )
 
   return (
-    <ToastContext.Provider value={{ pushUndo }}>
+    <ToastContext.Provider value={{ pushUndo, pushError }}>
       {children}
       <div className="pointer-events-none fixed bottom-4 left-4 z-[100] flex flex-col gap-2">
         {toasts.map((toast) => (
@@ -72,17 +91,21 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             key={toast.id}
             className="pointer-events-auto relative flex items-center gap-3 overflow-hidden rounded-lg border border-border bg-card px-4 py-3 shadow-lg"
           >
-            <span className="text-sm">{toast.message}</span>
-            <button
-              type="button"
-              className="text-sm font-semibold text-destructive hover:underline"
-              onClick={() => {
-                toast.onUndo()
-                remove(toast.id)
-              }}
-            >
-              {toast.undoLabel}
-            </button>
+            <span className={toast.error ? 'text-sm text-destructive' : 'text-sm'}>
+              {toast.message}
+            </span>
+            {toast.undo ? (
+              <button
+                type="button"
+                className="text-sm font-semibold text-destructive hover:underline"
+                onClick={() => {
+                  toast.undo?.onUndo()
+                  remove(toast.id)
+                }}
+              >
+                {toast.undo.label}
+              </button>
+            ) : null}
             <ToastProgress duration={UNDO_DURATION_MS} />
           </div>
         ))}

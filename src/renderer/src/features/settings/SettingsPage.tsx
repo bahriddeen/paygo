@@ -13,9 +13,10 @@ import {
   useResetAccount
 } from '@/lib/api'
 import { CURRENCY_CODES } from '@/lib/format'
-import { defaultWaTemplate } from '@/lib/i18n'
+import { defaultWaTemplate, defaultDirectTemplate } from '@/lib/i18n'
 import { useWhatsAppConnection } from '@/lib/useWhatsApp'
 import { formatDate } from '@/lib/date'
+import { parseDueDays } from '@/lib/directSend'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -179,7 +180,11 @@ function WhatsAppConnection() {
   }
 
   const errorText =
-    status.error === 'timeout'
+    status.error === 'logged_out'
+      ? t('settings.waErrorLoggedOut')
+      : status.error === 'reconnecting_slow'
+      ? t('settings.waErrorReconnecting')
+      : status.error === 'timeout'
       ? t('settings.waErrorTimeout')
       : status.error === 'connection_failed'
         ? t('settings.waErrorFailed')
@@ -381,6 +386,31 @@ export default function SettingsPage() {
               ))}
             </select>
           </Row>
+          <Row label={t('settings.phonePrefix')}>
+            <Input
+              className="w-40"
+              placeholder="+998"
+              defaultValue={raw['phone_prefix'] ?? ''}
+              onBlur={(e) => setSetting.mutate({ key: 'phone_prefix', value: e.target.value.trim() })}
+            />
+          </Row>
+          <p className="text-xs text-muted-foreground">{t('settings.phonePrefixHint')}</p>
+          <Row label={t('settings.defaultDueDays')}>
+            <Input
+              type="number"
+              min={0}
+              max={3650}
+              className="w-24"
+              defaultValue={String(parseDueDays(raw['default_due_days']))}
+              onBlur={(e) =>
+                setSetting.mutate({
+                  key: 'default_due_days',
+                  value: String(parseDueDays(e.target.value))
+                })
+              }
+            />
+          </Row>
+          <p className="text-xs text-muted-foreground">{t('settings.defaultDueDaysHint')}</p>
         </Section>
       ) : null}
 
@@ -436,6 +466,51 @@ export default function SettingsPage() {
                   </div>
                 ))}
                 <p className="text-xs text-muted-foreground">{t('settings.templateHint')}</p>
+              </div>
+            ) : null}
+            {raw['whatsapp_enabled'] === '1' ? (
+              <div className="space-y-3 border-t border-border pt-4">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={raw['wa_direct_send_enabled'] === '1'}
+                    onChange={(e) =>
+                      setSetting.mutate({
+                        key: 'wa_direct_send_enabled',
+                        value: e.target.checked ? '1' : '0'
+                      })
+                    }
+                    className="size-4 rounded border-input"
+                  />
+                  {t('settings.directSendEnabled')}
+                </label>
+                <p className="text-xs text-muted-foreground">{t('settings.directSendHint')}</p>
+                {raw['wa_direct_send_enabled'] === '1' ? (
+                  <>
+                    <p className="text-sm font-medium">{t('settings.directTemplateTitle')}</p>
+                    {(['ru', 'ky', 'uz'] as const).map((lang) => (
+                      <div key={lang} className="space-y-1.5">
+                        <Label>{lang.toUpperCase()}</Label>
+                        <textarea
+                          className={textareaClass}
+                          rows={3}
+                          defaultValue={
+                            raw[`wa_direct_template_${lang}`] || defaultDirectTemplate(lang)
+                          }
+                          onBlur={(e) =>
+                            setSetting.mutate({
+                              key: `wa_direct_template_${lang}`,
+                              value: e.target.value
+                            })
+                          }
+                        />
+                      </div>
+                    ))}
+                    <p className="text-xs text-muted-foreground">
+                      {t('settings.directTemplateHint')}
+                    </p>
+                  </>
+                ) : null}
               </div>
             ) : null}
           </div>

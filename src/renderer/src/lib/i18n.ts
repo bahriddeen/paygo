@@ -37,11 +37,20 @@ export function setLanguage(code: LanguageCode): void {
   document.documentElement.lang = code
 }
 
-const RESOURCES: Record<string, { reminders: { waTemplate: string } }> = { ru, ky, uz }
+const RESOURCES: Record<string, { reminders: { waTemplate: string }; settings: { directTemplate: string } }> = {
+  ru,
+  ky,
+  uz
+}
 
 /** The built-in WhatsApp reminder template for a language, with {{placeholders}} intact. */
 export function defaultWaTemplate(lang: string): string {
   return RESOURCES[lang]?.reminders.waTemplate ?? RESOURCES.ru.reminders.waTemplate
+}
+
+/** The built-in "new transaction" WhatsApp template for a language, with {{placeholders}} intact. */
+export function defaultDirectTemplate(lang: string): string {
+  return RESOURCES[lang]?.settings.directTemplate ?? RESOURCES.ru.settings.directTemplate
 }
 
 export default i18n

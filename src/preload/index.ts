@@ -178,6 +178,8 @@ const api = {
       maxDelaySec: number
     ): Promise<{ ok: boolean; error?: string }> =>
       ipcRenderer.invoke('whatsapp:sendBatch', { items, minDelaySec, maxDelaySec }),
+    sendDirect: (item: BatchItem): Promise<{ ok: boolean; error?: string }> =>
+      ipcRenderer.invoke('whatsapp:sendDirect', item),
     cancelBatch: (): Promise<{ ok: boolean }> => ipcRenderer.invoke('whatsapp:cancelBatch'),
     onQr: (cb: (dataUrl: string) => void): (() => void) => {
       const listener = (_e: unknown, dataUrl: string): void => cb(dataUrl)

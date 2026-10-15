@@ -7,6 +7,7 @@ import { useBranch } from './BranchProvider'
 import { useLock } from './LockGate'
 import { useScheduledReminderStatus } from './ScheduledReminderStatus'
 import { ScheduledReminderQueueModal } from './ScheduledReminderQueueModal'
+import { WhatsAppStatusPill } from './WhatsAppStatusPill'
 import { LANGUAGES, setLanguage, type LanguageCode } from '@/lib/i18n'
 import { useDemoStatus, useClearDemoData } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -91,6 +92,8 @@ export function TopBar() {
       </label>
 
       <div className="flex items-center gap-2">
+        <WhatsAppStatusPill />
+
         {reminderBatch.phase === 'sending' ? (
           <button
             type="button"

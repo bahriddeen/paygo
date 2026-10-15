@@ -77,6 +77,12 @@ export const ChangePinSchema = z.object({ oldPin: z.string().max(20), newPin: Pi
 export const RecoverSchema = z.object({ code: z.string().max(40) })
 export const ResetAccountSchema = z.object({ pin: z.string().max(20) })
 
+export const WaSendDirectSchema = z.object({
+  phone: z.string().min(3).max(40),
+  message: z.string().min(1).max(2000),
+  name: z.string().max(200)
+})
+
 export const WaSendBatchSchema = z.object({
   items: z
     .array(
